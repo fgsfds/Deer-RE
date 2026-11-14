@@ -1,0 +1,2200 @@
+{
+  "A": {
+    "@segment:CODE": [
+      4,
+      0
+    ],
+    "_asm1": [
+      3,
+      2181012
+    ],
+    "_asm2": [
+      3,
+      2181016
+    ],
+    "_asm3": [
+      3,
+      2181020
+    ],
+    "_asm4": [
+      3,
+      2181024
+    ],
+    "_bufplce": [
+      3,
+      997512
+    ],
+    "_ebpbak": [
+      3,
+      2185248
+    ],
+    "_espbak": [
+      3,
+      2185236
+    ],
+    "_fpuasm": [
+      3,
+      2185228
+    ],
+    "_globalx3": [
+      3,
+      2180904
+    ],
+    "_globaly3": [
+      3,
+      2180924
+    ],
+    "_palookupoffse": [
+      3,
+      997464
+    ],
+    "_reciptable": [
+      3,
+      1239464
+    ],
+    "_vince": [
+      3,
+      997480
+    ],
+    "_vplce": [
+      3,
+      997496
+    ],
+    "_ylookup": [
+      3,
+      2186400
+    ]
+  },
+  "CACHE1D": {
+    "@segment:CONST": [
+      3,
+      15012
+    ],
+    "_agecount": [
+      3,
+      40533
+    ],
+    "_cac": [
+      3,
+      849892
+    ],
+    "_cachecount": [
+      3,
+      40520
+    ],
+    "_cachesize": [
+      3,
+      40516
+    ],
+    "_cachestart": [
+      3,
+      40525
+    ],
+    "_cacnum": [
+      3,
+      40529
+    ],
+    "_filegrp": [
+      3,
+      849524
+    ],
+    "_filehan": [
+      3,
+      40813
+    ],
+    "_filepos": [
+      3,
+      849620
+    ],
+    "_gfilelist": [
+      3,
+      849588
+    ],
+    "_gfileoffs": [
+      3,
+      849508
+    ],
+    "_gnumfiles": [
+      3,
+      849876
+    ],
+    "_groupfil": [
+      3,
+      40797
+    ],
+    "_groupfilpos": [
+      3,
+      849604
+    ],
+    "_lockrecip": [
+      3,
+      960484
+    ],
+    "_lzwbuf1": [
+      3,
+      961292
+    ],
+    "_lzwbuf2": [
+      3,
+      961300
+    ],
+    "_lzwbuf3": [
+      3,
+      961296
+    ],
+    "_lzwbuf4": [
+      3,
+      961288
+    ],
+    "_lzwbuf5": [
+      3,
+      961284
+    ],
+    "_lzwbuflock": [
+      3,
+      961312
+    ],
+    "_numgroupfiles": [
+      3,
+      40793
+    ],
+    "_toupperlookup": [
+      3,
+      40537
+    ],
+    "_zerochar": [
+      3,
+      40524
+    ],
+    "allocache_": [
+      1,
+      133212
+    ],
+    "close_": [
+      1,
+      333485
+    ],
+    "compress_": [
+      1,
+      137952
+    ],
+    "exit_": [
+      1,
+      321917
+    ],
+    "filelength_": [
+      1,
+      333565
+    ],
+    "fread_": [
+      1,
+      333626
+    ],
+    "fwrite_": [
+      1,
+      328270
+    ],
+    "kfree_": [
+      1,
+      145069
+    ],
+    "kmalloc_": [
+      1,
+      145064
+    ],
+    "kread_": [
+      1,
+      135681
+    ],
+    "lseek_": [
+      1,
+      333490
+    ],
+    "min_": [
+      1,
+      333557
+    ],
+    "open_": [
+      1,
+      332608
+    ],
+    "printf_": [
+      1,
+      306180
+    ],
+    "read_": [
+      1,
+      333234
+    ],
+    "reportandexit_": [
+      1,
+      134525
+    ],
+    "uncompress_": [
+      1,
+      138510
+    ]
+  },
+  "ENGINE": {
+    "@segment:CONST": [
+      3,
+      15416
+    ],
+    "@segment:_TEXT": [
+      1,
+      138873
+    ],
+    "DPMI_int86_": [
+      1,
+      138873
+    ],
+    "DPMI_int86x_": [
+      1,
+      139148
+    ],
+    "ExitVBEBuf_": [
+      1,
+      139476
+    ],
+    "GetPtrToLFB_": [
+      1,
+      139882
+    ],
+    "VBE_callESDI_": [
+      1,
+      139563
+    ],
+    "VBE_getPalette_": [
+      1,
+      144927
+    ],
+    "VBE_setPalette_": [
+      1,
+      144332
+    ],
+    "_VESABuf_len": [
+      3,
+      41088
+    ],
+    "_VESABuf_rseg": [
+      3,
+      2186332
+    ],
+    "_VESABuf_sel": [
+      3,
+      41092
+    ],
+    "__GETDS": [
+      1,
+      327980
+    ],
+    "_activepage": [
+      3,
+      2186340
+    ],
+    "_activepagelookup": [
+      3,
+      1479656
+    ],
+    "_artfil": [
+      3,
+      41522
+    ],
+    "_artfilename": [
+      3,
+      2179204
+    ],
+    "_artfilnum": [
+      3,
+      2179228
+    ],
+    "_artfilplc": [
+      3,
+      2179200
+    ],
+    "_artsize": [
+      3,
+      41152
+    ],
+    "_artversion": [
+      3,
+      2185240
+    ],
+    "_asm1": [
+      3,
+      2181012
+    ],
+    "_asm2": [
+      3,
+      2181016
+    ],
+    "_asm3": [
+      3,
+      2181020
+    ],
+    "_automapping": [
+      3,
+      2195546
+    ],
+    "_bakdmost": [
+      3,
+      1054888
+    ],
+    "_bakframeplace": [
+      3,
+      961416
+    ],
+    "_bakumost": [
+      3,
+      1038888
+    ],
+    "_bakvidoption": [
+      3,
+      961400
+    ],
+    "_bakwindowx1": [
+      3,
+      961352
+    ],
+    "_bakwindowx2": [
+      3,
+      961336
+    ],
+    "_bakwindowy1": [
+      3,
+      961320
+    ],
+    "_bakwindowy2": [
+      3,
+      961432
+    ],
+    "_bakxsiz": [
+      3,
+      961368
+    ],
+    "_bakysiz": [
+      3,
+      961384
+    ],
+    "_bdist": [
+      3,
+      2179868
+    ],
+    "_beforedrawrooms": [
+      3,
+      41127
+    ],
+    "_blackband": [
+      3,
+      2186352
+    ],
+    "_britable": [
+      3,
+      1168808
+    ],
+    "_buffermode": [
+      3,
+      2186336
+    ],
+    "_bufplce": [
+      3,
+      997512
+    ],
+    "_bunchfirst": [
+      3,
+      1256872
+    ],
+    "_bunchlast": [
+      3,
+      1265064
+    ],
+    "_bytesperline": [
+      3,
+      2186300
+    ],
+    "_cachedebug": [
+      3,
+      41532
+    ],
+    "_cachesize": [
+      3,
+      41156
+    ],
+    "_capturecount": [
+      3,
+      41338
+    ],
+    "_clipit": [
+      3,
+      981904
+    ],
+    "_clipmoveboxtracenum": [
+      3,
+      41533
+    ],
+    "_clipnum": [
+      3,
+      2195378
+    ],
+    "_clipobjectval": [
+      3,
+      979880
+    ],
+    "_clipsectnum": [
+      3,
+      2195350
+    ],
+    "_clipsectorlist": [
+      3,
+      990104
+    ],
+    "_coldist": [
+      3,
+      41314
+    ],
+    "_colhead": [
+      3,
+      980904
+    ],
+    "_colhere": [
+      3,
+      2195410
+    ],
+    "_colnext": [
+      3,
+      995928
+    ],
+    "_colscan": [
+      3,
+      2179236
+    ],
+    "_cosglobalang": [
+      3,
+      2181048
+    ],
+    "_cosviewingrangeglobalang": [
+      3,
+      2181000
+    ],
+    "_curbrightness": [
+      3,
+      41143
+    ],
+    "_curpag": [
+      3,
+      41114
+    ],
+    "_davesapageshift": [
+      3,
+      2186296
+    ],
+    "_disable_": [
+      1,
+      335415
+    ],
+    "_distrecip": [
+      3,
+      1387560
+    ],
+    "_dmost": [
+      3,
+      1062184
+    ],
+    "_dommxoverlay": [
+      3,
+      41528
+    ],
+    "_dotp1": [
+      3,
+      1332584
+    ],
+    "_dotp2": [
+      3,
+      1318568
+    ],
+    "_dplc": [
+      3,
+      1022888
+    ],
+    "_dwall": [
+      3,
+      1051688
+    ],
+    "_editstatus": [
+      3,
+      41516
+    ],
+    "_enable_": [
+      1,
+      335417
+    ],
+    "_fmemcpy_": [
+      1,
+      334215
+    ],
+    "_fpuasm": [
+      3,
+      2185228
+    ],
+    "_frameoffset": [
+      3,
+      2181088
+    ],
+    "_frameplace": [
+      3,
+      2186316
+    ],
+    "_gdist": [
+      3,
+      2180384
+    ],
+    "_ggxinc": [
+      3,
+      2185768
+    ],
+    "_ggyinc": [
+      3,
+      2185252
+    ],
+    "_globalang": [
+      3,
+      2195388
+    ],
+    "_globalbufplc": [
+      3,
+      2180948
+    ],
+    "_globalcisibility": [
+      3,
+      2180984
+    ],
+    "_globalcursectnum": [
+      3,
+      2195390
+    ],
+    "_globaldclip": [
+      3,
+      2181040
+    ],
+    "_globalhisibility": [
+      3,
+      2180992
+    ],
+    "_globalhoriz": [
+      3,
+      2181072
+    ],
+    "_globalorientation": [
+      3,
+      2180912
+    ],
+    "_globalpal": [
+      3,
+      2181064
+    ],
+    "_globalpalwritten": [
+      3,
+      2181032
+    ],
+    "_globalpicnum": [
+      3,
+      2195384
+    ],
+    "_globalpisibility": [
+      3,
+      2181004
+    ],
+    "_globalpolytype": [
+      3,
+      2195539
+    ],
+    "_globalposx": [
+      3,
+      2181052
+    ],
+    "_globalposy": [
+      3,
+      2181056
+    ],
+    "_globalposz": [
+      3,
+      2181060
+    ],
+    "_globalshade": [
+      3,
+      2180916
+    ],
+    "_globalshiftval": [
+      3,
+      2195386
+    ],
+    "_globaluclip": [
+      3,
+      2180980
+    ],
+    "_globalvisibility": [
+      3,
+      2180996
+    ],
+    "_globalx": [
+      3,
+      2180964
+    ],
+    "_globalx1": [
+      3,
+      2180900
+    ],
+    "_globalx2": [
+      3,
+      2180908
+    ],
+    "_globalx3": [
+      3,
+      2180904
+    ],
+    "_globalxpanning": [
+      3,
+      2181036
+    ],
+    "_globalxshift": [
+      3,
+      2195535
+    ],
+    "_globaly": [
+      3,
+      2180968
+    ],
+    "_globaly1": [
+      3,
+      2180920
+    ],
+    "_globaly2": [
+      3,
+      2180928
+    ],
+    "_globaly3": [
+      3,
+      2180924
+    ],
+    "_globalypanning": [
+      3,
+      2180972
+    ],
+    "_globalyscale": [
+      3,
+      2180952
+    ],
+    "_globalyshift": [
+      3,
+      2195538
+    ],
+    "_globalz": [
+      3,
+      2180956
+    ],
+    "_globalzd": [
+      3,
+      2180932
+    ],
+    "_globalzx": [
+      3,
+      2180940
+    ],
+    "_globlinplace": [
+      3,
+      2186292
+    ],
+    "_globparaceilclip": [
+      3,
+      2195536
+    ],
+    "_globparaflorclip": [
+      3,
+      2195537
+    ],
+    "_globvis": [
+      3,
+      2181028
+    ],
+    "_gotpic": [
+      3,
+      1481192
+    ],
+    "_gotsector": [
+      3,
+      1481064
+    ],
+    "_halfxdimen": [
+      3,
+      2185212
+    ],
+    "_headspritesect": [
+      3,
+      2193294
+    ],
+    "_headspritestat": [
+      3,
+      2191244
+    ],
+    "_highlightcnt": [
+      3,
+      2195370
+    ],
+    "_hitscangoalx": [
+      3,
+      41322
+    ],
+    "_hitscangoaly": [
+      3,
+      41326
+    ],
+    "_hitwalls": [
+      3,
+      990096
+    ],
+    "_horizlookup": [
+      3,
+      2181044
+    ],
+    "_horizlookup2": [
+      3,
+      2181092
+    ],
+    "_horizycent": [
+      3,
+      2181068
+    ],
+    "_imageSize": [
+      3,
+      2186312
+    ],
+    "_inpreparemirror": [
+      3,
+      41526
+    ],
+    "_kensmessage": [
+      3,
+      1273256
+    ],
+    "_lastageclock": [
+      3,
+      2185244
+    ],
+    "_laststereoint": [
+      3,
+      2195547
+    ],
+    "_lastx": [
+      3,
+      991128
+    ],
+    "_linearmode": [
+      3,
+      2186328
+    ],
+    "_linehighlight": [
+      3,
+      2195372
+    ],
+    "_lowrecip": [
+      3,
+      1383464
+    ],
+    "_lplc": [
+      3,
+      1026088
+    ],
+    "_lwall": [
+      3,
+      997784
+    ],
+    "_mapversion": [
+      3,
+      2185232
+    ],
+    "_maskwall": [
+      3,
+      1007400
+    ],
+    "_maskwallcnt": [
+      3,
+      2195392
+    ],
+    "_maxpages": [
+      3,
+      2186320
+    ],
+    "_mirrorsx1": [
+      3,
+      2179196
+    ],
+    "_mirrorsx2": [
+      3,
+      2179192
+    ],
+    "_mirrorsy1": [
+      3,
+      2179184
+    ],
+    "_mirrorsy2": [
+      3,
+      2179180
+    ],
+    "_modelist": [
+      3,
+      1478888
+    ],
+    "_moustat": [
+      3,
+      41118
+    ],
+    "_nextspritesect": [
+      3,
+      1617768
+    ],
+    "_nextspritestat": [
+      3,
+      1625960
+    ],
+    "_numbunches": [
+      3,
+      2195356
+    ],
+    "_numframes": [
+      3,
+      2191204
+    ],
+    "_numhits": [
+      3,
+      2195360
+    ],
+    "_numpages": [
+      3,
+      2191220
+    ],
+    "_numpalookups": [
+      3,
+      2195408
+    ],
+    "_numscans": [
+      3,
+      2195352
+    ],
+    "_numsectors": [
+      3,
+      2195406
+    ],
+    "_numtilefiles": [
+      3,
+      2179224
+    ],
+    "_numtiles": [
+      3,
+      2186392
+    ],
+    "_numwalls": [
+      3,
+      2195404
+    ],
+    "_nytooclose": [
+      3,
+      2186284
+    ],
+    "_nytoofar": [
+      3,
+      2186288
+    ],
+    "_o3c2": [
+      3,
+      2195541
+    ],
+    "_oa1": [
+      3,
+      2195544
+    ],
+    "_ods": [
+      3,
+      2195398
+    ],
+    "_oes": [
+      3,
+      2195400
+    ],
+    "_origbuffermode": [
+      3,
+      2186304
+    ],
+    "_ortca": [
+      3,
+      2195542
+    ],
+    "_ortcb": [
+      3,
+      2195543
+    ],
+    "_oss": [
+      3,
+      2195396
+    ],
+    "_ostereopixelwidth": [
+      3,
+      41080
+    ],
+    "_overtbits": [
+      3,
+      2195545
+    ],
+    "_oviewingrange": [
+      3,
+      41135
+    ],
+    "_oxdimen": [
+      3,
+      41131
+    ],
+    "_oxyaspect": [
+      3,
+      41139
+    ],
+    "_p2": [
+      3,
+      1260968
+    ],
+    "_pageoffset": [
+      3,
+      2180960
+    ],
+    "_palette": [
+      3,
+      2137448
+    ],
+    "_paletteloaded": [
+      3,
+      41313
+    ],
+    "_palookup": [
+      3,
+      1642344
+    ],
+    "_palookupoffse": [
+      3,
+      997464
+    ],
+    "_parallaxtype": [
+      3,
+      2195548
+    ],
+    "_parallaxvisibility": [
+      3,
+      2186388
+    ],
+    "_parallaxyoffs": [
+      3,
+      2186364
+    ],
+    "_parallaxyscale": [
+      3,
+      2186368
+    ],
+    "_pcxheader": [
+      3,
+      41340
+    ],
+    "_permanentlock": [
+      3,
+      41147
+    ],
+    "_permanentupdate": [
+      3,
+      41113
+    ],
+    "_permfifo": [
+      3,
+      961448
+    ],
+    "_permhead": [
+      3,
+      41330
+    ],
+    "_permtail": [
+      3,
+      41334
+    ],
+    "_pic": [
+      3,
+      41148
+    ],
+    "_picanm": [
+      3,
+      1520232
+    ],
+    "_picsiz": [
+      3,
+      1337384
+    ],
+    "_pointhighlight": [
+      3,
+      2195380
+    ],
+    "_pow2char": [
+      3,
+      41160
+    ],
+    "_pow2long": [
+      3,
+      41168
+    ],
+    "_prevspritesect": [
+      3,
+      1597160
+    ],
+    "_prevspritestat": [
+      3,
+      1634152
+    ],
+    "_pskybits": [
+      3,
+      2195402
+    ],
+    "_pskyoff": [
+      3,
+      1519720
+    ],
+    "_qsetmode": [
+      3,
+      41305
+    ],
+    "_radarang": [
+      3,
+      1307816
+    ],
+    "_radarang2": [
+      3,
+      1288232
+    ],
+    "_randomseed": [
+      3,
+      2191208
+    ],
+    "_rdist": [
+      3,
+      2179352
+    ],
+    "_reciptable": [
+      3,
+      1239464
+    ],
+    "_rtcopmoff": [
+      3,
+      2179176
+    ],
+    "_rtcopmsel": [
+      3,
+      2195348
+    ],
+    "_rtcormoff": [
+      3,
+      2195346
+    ],
+    "_rtcormseg": [
+      3,
+      2195344
+    ],
+    "_rtcrmbuffer": [
+      3,
+      41541
+    ],
+    "_rx1": [
+      3,
+      1214888
+    ],
+    "_rx2": [
+      3,
+      1206696
+    ],
+    "_rxi": [
+      3,
+      997624
+    ],
+    "_rxi2": [
+      3,
+      997528
+    ],
+    "_ry1": [
+      3,
+      1231272
+    ],
+    "_ry2": [
+      3,
+      1223080
+    ],
+    "_ryi": [
+      3,
+      997720
+    ],
+    "_ryi2": [
+      3,
+      997560
+    ],
+    "_rzi": [
+      3,
+      997752
+    ],
+    "_rzi2": [
+      3,
+      997592
+    ],
+    "_screen": [
+      3,
+      41096
+    ],
+    "_screenalloctype": [
+      3,
+      41527
+    ],
+    "_searchit": [
+      3,
+      2195366
+    ],
+    "_searchsector": [
+      3,
+      2195358
+    ],
+    "_searchstat": [
+      3,
+      2195354
+    ],
+    "_searchwall": [
+      3,
+      2195364
+    ],
+    "_searchx": [
+      3,
+      41518
+    ],
+    "_searchy": [
+      3,
+      2179232
+    ],
+    "_sector": [
+      3,
+      2138216
+    ],
+    "_sectorborder": [
+      3,
+      996952
+    ],
+    "_sectorbordercnt": [
+      3,
+      2195382
+    ],
+    "_setactiveentry": [
+      3,
+      41101
+    ],
+    "_setpaletteentry": [
+      3,
+      41109
+    ],
+    "_setviewcnt": [
+      3,
+      41537
+    ],
+    "_setvisualentry": [
+      3,
+      41105
+    ],
+    "_shlookup": [
+      3,
+      1279528
+    ],
+    "_show2dsector": [
+      3,
+      1479912
+    ],
+    "_show2dsprite": [
+      3,
+      1519208
+    ],
+    "_show2dwall": [
+      3,
+      1480040
+    ],
+    "_showinvisibility": [
+      3,
+      2195549
+    ],
+    "_singlobalang": [
+      3,
+      2181100
+    ],
+    "_sintable": [
+      3,
+      1824104
+    ],
+    "_sinviewingrangeglobalang": [
+      3,
+      2180988
+    ],
+    "_slopalookup": [
+      3,
+      1310376
+    ],
+    "_smalltextfont": [
+      3,
+      1247656
+    ],
+    "_smost": [
+      3,
+      1065384
+    ],
+    "_smostcnt": [
+      3,
+      2195394
+    ],
+    "_smoststart": [
+      3,
+      1269160
+    ],
+    "_smostwall": [
+      3,
+      1248680
+    ],
+    "_smostwallcnt": [
+      3,
+      41296
+    ],
+    "_smostwalltype": [
+      3,
+      1273384
+    ],
+    "_sprite": [
+      3,
+      1643368
+    ],
+    "_spritesortcnt": [
+      3,
+      2191224
+    ],
+    "_spritesx": [
+      3,
+      1015592
+    ],
+    "_spritesy": [
+      3,
+      2181108
+    ],
+    "_spritesz": [
+      3,
+      1011496
+    ],
+    "_sqrtable": [
+      3,
+      1299624
+    ],
+    "_startdmost": [
+      3,
+      1605352
+    ],
+    "_startumost": [
+      3,
+      1557096
+    ],
+    "_stereomode": [
+      3,
+      41084
+    ],
+    "_stereopixelwidth": [
+      3,
+      41076
+    ],
+    "_stereowidth": [
+      3,
+      41072
+    ],
+    "_swall": [
+      3,
+      1032488
+    ],
+    "_swplc": [
+      3,
+      1045288
+    ],
+    "_tablesloaded": [
+      3,
+      41304
+    ],
+    "_tempbuf": [
+      3,
+      1291432
+    ],
+    "_textfont": [
+      3,
+      1167784
+    ],
+    "_thesector": [
+      3,
+      1275432
+    ],
+    "_thewall": [
+      3,
+      1169832
+    ],
+    "_tilefilenum": [
+      3,
+      1323368
+    ],
+    "_tilefileoffs": [
+      3,
+      1346600
+    ],
+    "_tilesizx": [
+      3,
+      1560296
+    ],
+    "_tilesizy": [
+      3,
+      1578728
+    ],
+    "_totalarea": [
+      3,
+      41123
+    ],
+    "_totalclock": [
+      3,
+      2191228
+    ],
+    "_totalclocklock": [
+      3,
+      2179188
+    ],
+    "_transarea": [
+      3,
+      41119
+    ],
+    "_transluc": [
+      3,
+      41309
+    ],
+    "_tsprite": [
+      3,
+      2090344
+    ],
+    "_tspriteptr": [
+      3,
+      1058088
+    ],
+    "_umost": [
+      3,
+      1019688
+    ],
+    "_uplc": [
+      3,
+      1042088
+    ],
+    "_uwall": [
+      3,
+      1004200
+    ],
+    "_validmode": [
+      3,
+      1823592
+    ],
+    "_validmodecnt": [
+      3,
+      2191216
+    ],
+    "_validmodexdim": [
+      3,
+      2135400
+    ],
+    "_validmodeydim": [
+      3,
+      2136424
+    ],
+    "_ves2lastx": [
+      3,
+      1473576
+    ],
+    "_vesachecked": [
+      3,
+      41100
+    ],
+    "_vgaInfo": [
+      3,
+      1478376
+    ],
+    "_vgacompatible": [
+      3,
+      2195540
+    ],
+    "_vgapal16": [
+      3,
+      41468
+    ],
+    "_vidoption": [
+      3,
+      2195550
+    ],
+    "_viewingrange": [
+      3,
+      2191232
+    ],
+    "_viewingrangerecip": [
+      3,
+      2181008
+    ],
+    "_viewoffset": [
+      3,
+      2181076
+    ],
+    "_vince": [
+      3,
+      997480
+    ],
+    "_visibility": [
+      3,
+      2186396
+    ],
+    "_visualpage": [
+      3,
+      2186348
+    ],
+    "_visualpagelookup": [
+      3,
+      1479400
+    ],
+    "_voxlock": [
+      3,
+      1453096
+    ],
+    "_voxoff": [
+      3,
+      1463336
+    ],
+    "_vplce": [
+      3,
+      997496
+    ],
+    "_wall": [
+      3,
+      1828200
+    ],
+    "_walock": [
+      3,
+      1608552
+    ],
+    "_waloff": [
+      3,
+      1482344
+    ],
+    "_whiteband": [
+      3,
+      2186360
+    ],
+    "_windowx1": [
+      3,
+      2186384
+    ],
+    "_windowx2": [
+      3,
+      2186380
+    ],
+    "_windowy1": [
+      3,
+      2186376
+    ],
+    "_windowy2": [
+      3,
+      2186372
+    ],
+    "_wx1": [
+      3,
+      2185216
+    ],
+    "_wx2": [
+      3,
+      2181080
+    ],
+    "_wy1": [
+      3,
+      2185224
+    ],
+    "_wy2": [
+      3,
+      2181084
+    ],
+    "_xb1": [
+      3,
+      1182120
+    ],
+    "_xb2": [
+      3,
+      1173928
+    ],
+    "_xdim": [
+      3,
+      2191240
+    ],
+    "_xdimen": [
+      3,
+      41300
+    ],
+    "_xdimenrecip": [
+      3,
+      2185208
+    ],
+    "_xdimenscale": [
+      3,
+      2181104
+    ],
+    "_xdimscale": [
+      3,
+      2185220
+    ],
+    "_xres": [
+      3,
+      2186308
+    ],
+    "_xsi": [
+      3,
+      997656
+    ],
+    "_xyaspect": [
+      3,
+      2180976
+    ],
+    "_yb1": [
+      3,
+      1198504
+    ],
+    "_yb2": [
+      3,
+      1190312
+    ],
+    "_ydim": [
+      3,
+      2191236
+    ],
+    "_ydim16": [
+      3,
+      2180936
+    ],
+    "_ydimen": [
+      3,
+      2181096
+    ],
+    "_ylookup": [
+      3,
+      2186400
+    ],
+    "_yres": [
+      3,
+      2186324
+    ],
+    "_ysi": [
+      3,
+      997688
+    ],
+    "_yxaspect": [
+      3,
+      2191212
+    ],
+    "agecache_": [
+      1,
+      134398
+    ],
+    "allocache_": [
+      1,
+      133212
+    ],
+    "animateoffs_": [
+      1,
+      199651
+    ],
+    "atexit_": [
+      1,
+      334310
+    ],
+    "bunchfront_": [
+      1,
+      150161
+    ],
+    "ceilscan_": [
+      1,
+      156430
+    ],
+    "ceilspritehline_": [
+      1,
+      199191
+    ],
+    "ceilspritescan_": [
+      1,
+      198959
+    ],
+    "changespritesect_": [
+      1,
+      200953
+    ],
+    "clear2dscreen_": [
+      1,
+      220123
+    ],
+    "clearallviews_": [
+      1,
+      251304
+    ],
+    "clipinsidebox_": [
+      1,
+      175121
+    ],
+    "clipinsideboxline_": [
+      1,
+      175369
+    ],
+    "clippoly4_": [
+      1,
+      237732
+    ],
+    "clippoly_": [
+      1,
+      246006
+    ],
+    "close_": [
+      1,
+      333485
+    ],
+    "deletespritesect_": [
+      1,
+      200417
+    ],
+    "deletespritestat_": [
+      1,
+      200685
+    ],
+    "div_": [
+      1,
+      334486
+    ],
+    "dorotatesprite_": [
+      1,
+      230314
+    ],
+    "dosetaspect_": [
+      1,
+      228802
+    ],
+    "draw2dgrid_": [
+      1,
+      220221
+    ],
+    "drawalls_": [
+      1,
+      150327
+    ],
+    "drawline16_": [
+      1,
+      218499
+    ],
+    "drawmaskwall_": [
+      1,
+      180028
+    ],
+    "drawslab_": [
+      4,
+      6240
+    ],
+    "drawsprite_": [
+      1,
+      181530
+    ],
+    "drawvox_": [
+      1,
+      195061
+    ],
+    "engconvalloc32_": [
+      1,
+      264954
+    ],
+    "exit_": [
+      1,
+      321917
+    ],
+    "faketimerhandler_": [
+      1,
+      12028
+    ],
+    "fillpolygon_": [
+      1,
+      249779
+    ],
+    "fixtransluscence_": [
+      4,
+      1344
+    ],
+    "florscan_": [
+      1,
+      158860
+    ],
+    "free_": [
+      1,
+      334756
+    ],
+    "getangle_": [
+      1,
+      177404
+    ],
+    "getceilzofslope_": [
+      1,
+      253417
+    ],
+    "getclosestcol_": [
+      1,
+      239679
+    ],
+    "getflorzofslope_": [
+      1,
+      253644
+    ],
+    "getpalookup_": [
+      1,
+      261730
+    ],
+    "getvalidvesamodes_": [
+      1,
+      140481
+    ],
+    "getzsofslope_": [
+      1,
+      253877
+    ],
+    "grouscan_": [
+      1,
+      258444
+    ],
+    "hline_": [
+      1,
+      171682
+    ],
+    "hlineasm4_": [
+      4,
+      448
+    ],
+    "initcache_": [
+      1,
+      133119
+    ],
+    "initfastcolorlookup_": [
+      1,
+      239195
+    ],
+    "initksqrt_": [
+      1,
+      177792
+    ],
+    "initspritelists_": [
+      1,
+      199790
+    ],
+    "insertsprite_": [
+      1,
+      200016
+    ],
+    "insertspritesect_": [
+      1,
+      200037
+    ],
+    "insertspritestat_": [
+      1,
+      200227
+    ],
+    "inside_": [
+      1,
+      177218
+    ],
+    "installbistereohandlers_": [
+      1,
+      265021
+    ],
+    "int386_": [
+      1,
+      332379
+    ],
+    "int386x_": [
+      1,
+      332408
+    ],
+    "kclose_": [
+      1,
+      136132
+    ],
+    "keepaway_": [
+      1,
+      215373
+    ],
+    "kfilelength_": [
+      1,
+      136067
+    ],
+    "kfree_": [
+      1,
+      145069
+    ],
+    "klseek_": [
+      1,
+      135942
+    ],
+    "kmalloc_": [
+      1,
+      145064
+    ],
+    "kopen4load_": [
+      1,
+      135359
+    ],
+    "kread_": [
+      1,
+      135681
+    ],
+    "lastwall_": [
+      1,
+      209053
+    ],
+    "lintersect_": [
+      1,
+      208330
+    ],
+    "loadpalette_": [
+      1,
+      170365
+    ],
+    "loadtables_": [
+      1,
+      170140
+    ],
+    "loadtile_": [
+      1,
+      173555
+    ],
+    "loadvoxel_": [
+      1,
+      145056
+    ],
+    "loopnumofsector_": [
+      1,
+      265422
+    ],
+    "malloc_": [
+      1,
+      334542
+    ],
+    "maskwallscan_": [
+      1,
+      164438
+    ],
+    "memcpy_": [
+      1,
+      335419
+    ],
+    "memset_": [
+      1,
+      334101
+    ],
+    "mhline_": [
+      4,
+      3792
+    ],
+    "mmxoverlay_": [
+      4,
+      6746
+    ],
+    "msethlineshift_": [
+      4,
+      3744
+    ],
+    "msetupspritevline_": [
+      4,
+      3488
+    ],
+    "mspritevline_": [
+      4,
+      3568
+    ],
+    "mvlineasm1_": [
+      4,
+      1296
+    ],
+    "mvlineasm4_": [
+      4,
+      2736
+    ],
+    "open_": [
+      1,
+      332608
+    ],
+    "owallmost_": [
+      1,
+      254606
+    ],
+    "parascan_": [
+      1,
+      261783
+    ],
+    "prepwall_": [
+      1,
+      155524
+    ],
+    "prevlineasm1_": [
+      4,
+      1216
+    ],
+    "printf_": [
+      1,
+      306180
+    ],
+    "qrhlineasm4_": [
+      4,
+      5984
+    ],
+    "raytrace_": [
+      1,
+      215543
+    ],
+    "readpixel16_": [
+      1,
+      175598
+    ],
+    "rhlineasm4_": [
+      4,
+      5488
+    ],
+    "rintersect_": [
+      1,
+      208618
+    ],
+    "rmhlineasm4_": [
+      4,
+      5792
+    ],
+    "scansector_": [
+      1,
+      147435
+    ],
+    "segread_": [
+      1,
+      334175
+    ],
+    "setactivepage_": [
+      1,
+      142153
+    ],
+    "setaspect_": [
+      1,
+      228701
+    ],
+    "setbrightness_": [
+      1,
+      240170
+    ],
+    "sethlinesizes_": [
+      4,
+      0
+    ],
+    "setpalookupaddress_": [
+      4,
+      320
+    ],
+    "setstereo_": [
+      1,
+      264132
+    ],
+    "settransnormal_": [
+      4,
+      1392
+    ],
+    "settransreverse_": [
+      4,
+      1536
+    ],
+    "setupdrawslab_": [
+      4,
+      6143
+    ],
+    "setuphlineasm4_": [
+      4,
+      384
+    ],
+    "setupmvlineasm_": [
+      4,
+      1168
+    ],
+    "setupqrhlineasm4_": [
+      4,
+      5888
+    ],
+    "setuprhlineasm4_": [
+      4,
+      5328
+    ],
+    "setuprmhlineasm4_": [
+      4,
+      5760
+    ],
+    "setupslopevlin_": [
+      4,
+      4976
+    ],
+    "setupspritevline_": [
+      4,
+      3376
+    ],
+    "setuptvlineasm2_": [
+      4,
+      4448
+    ],
+    "setuptvlineasm_": [
+      4,
+      1200
+    ],
+    "setupvlineasm_": [
+      4,
+      976
+    ],
+    "setvesa_": [
+      1,
+      141154
+    ],
+    "setview_": [
+      1,
+      228242
+    ],
+    "setvisualpage_": [
+      1,
+      142323
+    ],
+    "setvlinebpl_": [
+      4,
+      224
+    ],
+    "slopevlin_": [
+      4,
+      5056
+    ],
+    "slowhline_": [
+      1,
+      171860
+    ],
+    "spritevline_": [
+      4,
+      3452
+    ],
+    "spritewallfront_": [
+      1,
+      150069
+    ],
+    "stereohandler1_": [
+      1,
+      263489
+    ],
+    "stereohandler2_": [
+      1,
+      263651
+    ],
+    "stereonextpage_": [
+      1,
+      263760
+    ],
+    "strcpy_": [
+      1,
+      335384
+    ],
+    "strlen_": [
+      1,
+      334890
+    ],
+    "strncmp_": [
+      1,
+      334445
+    ],
+    "strncpy_": [
+      1,
+      334370
+    ],
+    "suckcache_": [
+      1,
+      134091
+    ],
+    "thline_": [
+      4,
+      4144
+    ],
+    "transmaskvline2_": [
+      1,
+      167843
+    ],
+    "transmaskvline_": [
+      1,
+      167451
+    ],
+    "transmaskwallscan_": [
+      1,
+      169042
+    ],
+    "tsethlineshift_": [
+      4,
+      4096
+    ],
+    "tsetupspritevline_": [
+      4,
+      3600
+    ],
+    "tspritevline_": [
+      4,
+      3648
+    ],
+    "tvlineasm1_": [
+      4,
+      1680
+    ],
+    "tvlineasm2_": [
+      4,
+      4496
+    ],
+    "uninitvesa_": [
+      1,
+      144300
+    ],
+    "uninstallbistereohandlers_": [
+      1,
+      265305
+    ],
+    "updatesector_": [
+      1,
+      217103
+    ],
+    "vlineasm1_": [
+      4,
+      1248
+    ],
+    "vlineasm4_": [
+      4,
+      1744
+    ],
+    "wallfront_": [
+      1,
+      149508
+    ],
+    "wallmost_": [
+      1,
+      255895
+    ],
+    "wallscan_": [
+      1,
+      161417
+    ],
+    "write_": [
+      1,
+      334915
+    ]
+  }
+}

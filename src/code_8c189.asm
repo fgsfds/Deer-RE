@@ -1,0 +1,5 @@
+bits 32
+org 0x8c189
+
+    db 0x00
+    jmp near 0x8c1ae

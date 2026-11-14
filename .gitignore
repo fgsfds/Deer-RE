@@ -1,0 +1,7 @@
+/reference/
+/work/
+__pycache__/
+*.EXE
+*.exe
+*.obj
+!/ci/inputs/**

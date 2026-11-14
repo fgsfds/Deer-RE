@@ -1,0 +1,9 @@
+*.md text eol=lf
+*.py text eol=lf
+*.ps1 text eol=lf
+*.asm text eol=lf
+*.inc text eol=lf
+*.yml text eol=lf
+tools/inputs/** -text
+GPL-2.0.TXT -whitespace
+ci/inputs/nasm/LICENSE -whitespace
