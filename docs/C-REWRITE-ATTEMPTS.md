@@ -92,6 +92,29 @@ expected). Correcting that displacement made the span exact. The full pinned
 executable hash then passed. See `src/code_88da6.c` and
 `tools/verify_control.py`.
 
+## `code_75f93` heap-state check — resolved
+
+The first C draft did not preserve the EBP frame and saved ESI instead of the
+target's callee-saved EBX. `/of+` restored the frame; listing ESI as clobbered
+while leaving EBX preserved made the register contract match. An early-goto
+draft moved the `-1` return to the end of the routine and changed the initial
+branch shape, so direct returns are needed to keep that path at the target's
+early location.
+
+Watcom zeroed the stack record through registers, while the target uses
+immediate stores. It also materialized `address - 4` in temporary registers
+inside the scan loop. Narrow code patches restore the immediate stores, form
+the address in EBX before the loop, and replace the redundant load/LEA/compare
+sequence with the target's direct memory compare. Returning DS as a C `uint16`
+emitted `66 8c d8`; the target's `8c d8` writes the selector to EAX, so the
+prefix is removed. The first C relocation for `nheapwal` also used the absolute
+address as an object offset, adding `0x10000`; object 1 requires the
+base-relative offset `0x76b0a` for address `0x86b0a`. After correcting that
+binding, byte comparison isolated seven short-branch displacements and one
+forward jump that differed. Patching those displacements yielded an exact
+93-byte span and fixup set. See `src/code_75f93.c` and
+`tools/verify_control.py`.
+
 ## Earlier rejected candidates — retry diagnostics incomplete
 
 Direct C candidates for `setup_mouse` (712 bytes), `config_defaults` (148

@@ -3919,6 +3919,10 @@ C_SYMBOL_BINDINGS = {
         "code_88d83_": (1, 0x78D83),
         "call_8c543_": (1, 0x7C543),
     },
+    "code_75f93": {
+        "_state_b889": (3, 0xB889),
+        "call_86b0a_": (1, 0x76B0A),
+    },
     "code_88e27": {
         "_diagnostic_name_8f88": (3, 0x8F88),
         "call_81e58_": (1, 0x71E58),
@@ -4142,6 +4146,7 @@ C_PADDING_SYMBOLS = {
 }
 C_COMPILE_OPTIONS = {
     "code_88da6": ("/of+",),
+    "code_75f93": ("/of+",),
     "code_5d849": ("/of+",),
     "code_5d8a9": ("/of+",),
     "code_5d8cc": ("/of+",),
@@ -4237,6 +4242,20 @@ C_CODE_PATCHES = {
         (bytes.fromhex("30ed882d00000000"),
          bytes.fromhex("c6050000000000"), ((4, 2),)),
         (bytes.fromhex("744e"), bytes.fromhex("744d")),
+    ),
+    "code_75f93": (
+        (bytes.fromhex("31c9894dec31c966894df0"),
+         bytes.fromhex("66c745f00000c745ec00000000")),
+        (bytes.fromhex("668cd8"), bytes.fromhex("8cd8")),
+        (bytes.fromhex("85d2"), bytes.fromhex("8d58fc85d2")),
+        (bytes.fromhex("8b75ec8d53fc39f2"), bytes.fromhex("3b5dec")),
+        (bytes.fromhex("eb3f"), bytes.fromhex("eb3e")),
+        (bytes.fromhex("eb29"), bytes.fromhex("eb23")),
+        (bytes.fromhex("751b"), bytes.fromhex("7515")),
+        (bytes.fromhex("75e7"), bytes.fromhex("75ed")),
+        (bytes.fromhex("75e1"), bytes.fromhex("75e7")),
+        (bytes.fromhex("74db"), bytes.fromhex("74e1")),
+        (bytes.fromhex("ebd2"), bytes.fromhex("ebd8")),
     ),
     "code_5abc7": ((
         bytes.fromhex("8b542404"),
