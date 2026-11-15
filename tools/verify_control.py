@@ -3822,9 +3822,11 @@ C_SYMBOL_BINDINGS = {
     "code_616ad": {"code_6406b_": (1, 0x5406B)},
     "code_735e0": {"___STACKLOW": (3, 0xC8D0)},
     "code_8c189": {"code_8c1ae_": (1, 0x7C1AE)},
+    "audio_init_flags": {"_sound_driver_flags": (3, 0x149B8)},
 }
 C_PADDING_SYMBOLS = {
     "code_735e0": {"_code_735e0_padding": 1},
+    "audio_init_flags": {"_audio_init_flags_tail": 2},
 }
 
 
