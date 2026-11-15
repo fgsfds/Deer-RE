@@ -3826,6 +3826,11 @@ C_SYMBOL_BINDINGS = {
     "code_64231": {"call_76112_": (1, 0x66112), "call_73680_": (1, 0x63680)},
     "code_88a03": {"_call_8ac7c": (1, 0x7AC7C)},
     "code_8b349": {"_call_5ac04": (1, 0x4AC04), "_call_data_900c": (3, 0x900C)},
+    "code_640a0": {
+        "call_5e95b_": (1, 0x4E95B),
+        "_data_22efc0": (3, 0x22EFC0),
+        "_data_22efc4": (3, 0x22EFC4),
+    },
 }
 C_PADDING_SYMBOLS = {
     "code_735e0": {"_code_735e0_padding": 1},
