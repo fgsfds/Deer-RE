@@ -1,5 +1,5 @@
 bits 32
-org 0x19ff0
+org 0x1a044
 
 %define GET_Z_RANGE 0x46fb4
 %define BADGUY 0x14814
@@ -13,43 +13,6 @@ org 0x19ff0
 %define TOKEN_BUFFER 0xa6ab0
 %define TEXT_CURSOR 0xbd9c4
 %define CON_KEYWORDS 0x9730
-
-get_inc_angle:
-    push ebp
-    mov ebp, esp
-    push ebx
-    push ecx
-    mov ebx, eax
-    and bh, 7
-    and dh, 7
-    movsx eax, bx
-    movsx ecx, dx
-    sub eax, ecx
-    test eax, eax
-    jns short loc_1a00b
-    neg eax
-loc_1a00b:
-    cmp eax, strict dword 0x400
-    jl short loc_1a038
-    cmp dx, 0x400
-    jle short loc_1a01f
-    sub edx, strict dword 0x800
-loc_1a01f:
-    cmp bx, 0x400
-    jle short loc_1a02c
-    sub ebx, strict dword 0x800
-loc_1a02c:
-    sub edx, strict dword 0x800
-    sub ebx, strict dword 0x800
-loc_1a038:
-    sub edx, ebx
-    mov eax, edx
-    lea esp, [ebp - 8]
-    pop ecx
-    pop ebx
-    pop ebp
-    ret
-    nop
 
 is_special:
     push ebp

@@ -1,6 +1,8 @@
 # Exact build and verification
 
 On 64-bit Windows, run from the repository root with Python 3.10 or later on PATH.
+The build compiles C spans with the bundled Watcom 10.5 DOS compiler in DOSBox;
+DOSBox is used for compilation only.
 
 ```sh
 python tools/verify_ci_build.py
@@ -44,5 +46,9 @@ also accepts `--compare $original` for a full byte comparison.
   stub. [Pinned Redneck-Rampage-RE checkout](https://github.com/NBlood/Redneck-Rampage-RE/tree/4109fb04260eaaddf9ccfcd5ef42bcd355b5f353)
 - `watcom/LIB386/` contains the three Watcom 10.5 runtime libraries used
   by the linker. [Watcom 10.5 CD](https://winworldpc.com/download/0a5bbe4e-1209-11e9-9b71-fa163e9022f0)
+- `watcom/binw/` contains Watcom C32 10.5 and its DOS loader, used to compile
+  reconstructed C spans.
+- `dosbox/` contains the pinned Windows DOSBox 0.74-3 runner and its SDL
+  libraries; see the included [DOSBox license](../tools/inputs/dosbox/COPYING.txt).
 - `nasm/` contains the Windows assembler also used by Fate-RE and its
   [BSD license](../tools/inputs/nasm/LICENSE).

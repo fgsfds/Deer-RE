@@ -1,0 +1,5 @@
+bits 32
+org 0x61f94
+
+    push 0x6920
+    jmp short 0x61f84

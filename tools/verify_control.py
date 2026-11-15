@@ -1,12 +1,23 @@
 """Build and verify standalone RDH code and control data spans."""
 import argparse
+from dataclasses import replace
 import json
+import os
 from pathlib import Path
+import shutil
 import struct
 import subprocess
+import tempfile
 
 from link_enginera import verify_span
-from rdh import Image, ROOT
+from omf_fixups import read_externals, read_fixups
+from omf_sections import read_object
+from rdh import Image, OBJECTS, ROOT
+
+INPUTS = ROOT / "tools/inputs"
+DEFAULT_C_COMPILER = INPUTS / "watcom/binw/wcc386.exe"
+DEFAULT_C_RUNNER = INPUTS / "watcom/binw/w32run.exe"
+DEFAULT_DOSBOX = INPUTS / "dosbox/DOSBox.exe"
 
 ACTION_NAMES = (
     "Move_Forward", "Move_Backward", "Turn_Left", "Turn_Right", "Strafe", "Fire",
@@ -21,7 +32,8 @@ ACTION_NAMES = (
 )
 CODE = (
     ("code_start", 0x10010, 16, {}),
-    ("action_lookup", 0x10328, 88, {0x10339: (7, 0, 3, 0x93D0), 0x1036F: (7, 0, 3, 0x93D0)}),
+    ("action_lookup", 0x10328, 60, {0x10339: (7, 0, 3, 0x93D0)}),
+    ("action_name", 0x10364, 28, {0x1036F: (7, 0, 3, 0x93D0)}),
     ("analog_lookup", 0x10380, 104, {
         0x10388: (7, 0, 3, 0x3E8), 0x10396: (7, 0, 3, 0x3F8),
         0x103AD: (7, 0, 3, 0x408), 0x103C4: (7, 0, 3, 0x418),
@@ -832,7 +844,8 @@ CODE = (
         (0x19f6b, 3, 0x14a0), (0x19f7a, 3, 0x16f0), (0x19f97, 3, 0x14a0),
         (0x19fa6, 3, 0x1728), (0x19fc3, 3, 0x14a0), (0x19fd2, 3, 0x1758),
     )}),
-    ("script_lexer", 0x19FF0, 2764, {site: (7, 16 if target > 0xFFFF else 0, obj, target)
+    ("get_inc_angle", 0x19FF0, 84, {}),
+    ("script_lexer", 0x1A044, 2680, {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                                     for site, obj, target in (
         (0x1a04f, 3, 0xc3358), (0x1a059, 3, 0xc3358), (0x1a086, 3, 0x9150),
         (0x1a0d7, 3, 0x191368), (0x1a139, 3, 0x20438), (0x1a194, 3, 0x191374),
@@ -3304,9 +3317,11 @@ CODE = (
         (0x5a6e8, 3, 0x5334), (0x5a720, 3, 0xb71b),
     )}),
     ("audio_init_flags", 0x79133, 13, {0x79135: (7, 16, 3, 0x149B8)}),
-    ("game_helpers", 0x50FE0, 92, {
+    ("select_random", 0x50FE0, 72, {
         0x50FE6: (7, 0, 3, 0xA258), 0x50FF0: (7, 16, 3, 0xCF65C),
         0x51008: (7, 0, 3, 0xA258), 0x5100F: (7, 16, 3, 0xCF65C),
+    }),
+    ("store_slot", 0x51028, 20, {
         0x51033: (7, 16, 3, 0x218060),
     }),
     ("library_handle_operations", 0x8613F, 2507,
@@ -3671,46 +3686,77 @@ CODE = (
         (0x8C5D4, 3, 0x14DF8), (0x8C5DF, 3, 0x14D50), (0x8C5E6, 3, 0x14DF8),
         (0x8C606, 3, 0x14DF8), (0x8C616, 3, 0x14D50), (0x8C61D, 3, 0x14DF8),
     )}),
-    ("code_5ab31", 0x5AB31, 211,
+    ("code_5ab31", 0x5AB31, 1, {}),
+    ("code_5ab32", 0x5AB32, 30, {}),
+    ("code_5ab50", 0x5AB50, 6, {0x5AB51: (7, 0, 3, 0xB871)}),
+    ("code_5ab56", 0x5AB56, 6, {0x5AB57: (7, 0, 3, 0xB869)}),
+    ("code_5ab5c", 0x5AB5C, 6, {0x5AB5D: (7, 0, 3, 0xB86D)}),
+    ("code_5ab62", 0x5AB62, 6, {0x5AB63: (7, 0, 3, 0xB860)}),
+    ("code_5ab68", 0x5AB68, 6, {0x5AB69: (7, 0, 3, 0xB864)}),
+    ("code_5ab6e", 0x5AB6E, 6, {0x5AB6F: (7, 0, 3, 0xB868)}),
+    ("code_5ab74", 0x5AB74, 6, {0x5AB75: (7, 0, 3, 0xB873)}),
+    ("code_5ab7a", 0x5AB7A, 77,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
-        (0x5AB51, 3, 0xB871), (0x5AB57, 3, 0xB869), (0x5AB5D, 3, 0xB86D),
-        (0x5AB63, 3, 0xB860), (0x5AB69, 3, 0xB864), (0x5AB6F, 3, 0xB868),
-        (0x5AB75, 3, 0xB873), (0x5AB87, 3, 0xBCC5), (0x5ABA6, 3, 0xBCC5),
-        (0x5ABAD, 3, 0x21EABC), (0x5ABB8, 3, 0x21EABC), (0x5ABBE, 3, 0x21EABC),
-        (0x5ABCB, 3, 0xBE48), (0x5ABD6, 1, 0x52A8E), (0x5ABE1, 3, 0xBE48),
-        (0x5ABEA, 3, 0xB883), (0x5ABF0, 3, 0xB88C), (0x5ABF7, 3, 0xB807),
+        (0x5AB87, 3, 0xBCC5), (0x5ABA6, 3, 0xBCC5), (0x5ABAD, 3, 0x21EABC),
+        (0x5ABB8, 3, 0x21EABC), (0x5ABBE, 3, 0x21EABC),
     )}),
+    ("code_5abc7", 0x5ABC7, 34, {
+        0x5ABCB: (7, 0, 3, 0xBE48), 0x5ABD6: (7, 16, 1, 0x52A8E),
+        0x5ABE1: (7, 0, 3, 0xBE48),
+    }),
+    ("code_5abe9", 0x5ABE9, 6, {0x5ABEA: (7, 0, 3, 0xB883)}),
+    ("code_5abef", 0x5ABEF, 6, {0x5ABF0: (7, 0, 3, 0xB88C)}),
+    ("code_5abf5", 0x5ABF5, 15, {0x5ABF7: (7, 0, 3, 0xB807)}),
     ("code_5aed8", 0x5AED8, 24, {}),
     ("code_5bf59", 0x5BF59, 55, {}),
-    ("code_5d849", 0x5D849, 298,
+    ("code_5d849", 0x5D849, 96,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
         (0x5D84E, 3, 0xBE64), (0x5D857, 3, 0xBE68), (0x5D871, 3, 0xB860),
         (0x5D879, 3, 0xB864), (0x5D87F, 3, 0xB890), (0x5D888, 3, 0xB891),
         (0x5D893, 3, 0xB869), (0x5D89B, 3, 0xB86D), (0x5D8A1, 3, 0xB872),
-        (0x5D8B9, 3, 0xB872), (0x5D8C4, 3, 0xB87F), (0x5D8E3, 3, 0xB71F),
-        (0x5D8F3, 3, 0xB71B), (0x5D91D, 3, 0xB73F),
+    )}),
+    ("code_5d8a9", 0x5D8A9, 35, {
+        0x5D8B9: (7, 0, 3, 0xB872), 0x5D8C4: (7, 0, 3, 0xB87F),
+    }),
+    ("code_5d8cc", 0x5D8CC, 167,
+        {site: (7, 16 if target > 0xFFFF else 0, obj, target)
+                            for site, obj, target in (
+        (0x5D8E3, 3, 0xB71F), (0x5D8F3, 3, 0xB71B), (0x5D91D, 3, 0xB73F),
     )}),
     ("code_5e403", 0x5E403, 45, {}),
     ("code_5e9ab", 0x5E9AB, 46, {}),
-    ("code_61223", 0x61223, 56, {}),
+    ("code_61223", 0x61223, 28, {}),
+    ("code_6123f", 0x6123F, 28, {}),
     ("code_616ad", 0x616AD, 5, {}),
     ("code_61915", 0x61915, 74, {}),
     ("code_61a22", 0x61A22, 75, {}),
-    ("code_61e37", 0x61E37, 85, {}),
-    ("code_61ee1", 0x61EE1, 187,
+    ("code_61e37", 0x61E37, 4, {}),
+    ("code_61e3b", 0x61E3B, 81, {}),
+    ("code_61ee1", 0x61EE1, 0x52,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
         (0x61EE7, 3, 0xD2BC), (0x61EEF, 3, 0xD2BC), (0x61EF9, 3, 0xB808),
         (0x61F02, 3, 0xB889), (0x61F0B, 3, 0xB889), (0x61F19, 3, 0xB889),
-        (0x61F27, 3, 0xB889), (0x61F34, 3, 0xD2BC), (0x61F3B, 3, 0xB889),
-        (0x61F49, 3, 0xB889), (0x61F50, 3, 0x22EE80), (0x61F57, 3, 0xB887),
-        (0x61F5E, 3, 0xB889), (0x61F65, 3, 0xB887), (0x61F6B, 3, 0xD314),
-        (0x61F72, 3, 0xB889), (0x61F80, 3, 0x68C4), (0x61F8E, 3, 0x68F3),
-        (0x61F95, 3, 0x6920),
+        (0x61F27, 3, 0xB889),
     )}),
-    ("code_629b5", 0x629B5, 152,
+    ("code_61f33", 0x61F33, 6, {0x61F34: (7, 0, 3, 0xD2BC)}),
+    ("code_61f39", 0x61F39, 0x23, {
+        0x61F3B: (7, 0, 3, 0xB889), 0x61F49: (7, 0, 3, 0xB889),
+        0x61F50: (7, 16, 3, 0x22EE80), 0x61F57: (7, 0, 3, 0xB887),
+    }),
+    ("code_61f5c", 0x61F5C, 0x0E, {
+        0x61F5E: (7, 0, 3, 0xB889), 0x61F65: (7, 0, 3, 0xB887),
+    }),
+    ("code_61f6a", 0x61F6A, 6, {0x61F6B: (7, 0, 3, 0xD314)}),
+    ("code_61f70", 0x61F70, 0x0F, {0x61F72: (7, 0, 3, 0xB889)}),
+    ("code_61f7f", 0x61F7F, 14, {0x61F80: (7, 0, 3, 0x68C4)}),
+    ("code_61f8d", 0x61F8D, 7, {0x61F8E: (7, 0, 3, 0x68F3)}),
+    ("code_61f94", 0x61F94, 7, {0x61F95: (7, 0, 3, 0x6920)}),
+    ("code_61f9b", 0x61F9B, 1, {}),
+    ("code_629b5", 0x629B5, 16, {}),
+    ("code_629c5", 0x629C5, 136,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
         (0x629CD, 3, 0xB83C), (0x629DE, 3, 0x22EE6C), (0x629E9, 3, 0xB890),
@@ -3738,12 +3784,22 @@ CODE = (
     )}),
     ("code_64231", 0x64231, 17, {}),
     ("code_6da72", 0x6DA72, 1, {}),
-    ("code_73490", 0x73490, 206,
+    ("code_73490", 0x73490, 14,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
-        (0x73492, 3, 0xD2A4), (0x734A3, 3, 0xD2A4), (0x734AC, 3, 0xD2A4),
+        (0x73492, 3, 0xD2A4),
+    )}),
+    ("code_7349e", 0x7349E, 57,
+        {site: (7, 16 if target > 0xFFFF else 0, obj, target)
+                            for site, obj, target in (
+        (0x734A3, 3, 0xD2A4), (0x734AC, 3, 0xD2A4),
         (0x734B3, 3, 0xB893), (0x734BC, 3, 0xB893), (0x734C5, 3, 0x14848),
-        (0x734CE, 3, 0xD2A4), (0x7352B, 3, 0xD2A5), (0x73534, 3, 0xD2A5),
+        (0x734CE, 3, 0xD2A4),
+    )}),
+    ("code_734d7", 0x734D7, 135,
+        {site: (7, 16 if target > 0xFFFF else 0, obj, target)
+                            for site, obj, target in (
+        (0x7352B, 3, 0xD2A5), (0x73534, 3, 0xD2A5),
         (0x73547, 3, 0xD2A5),
     )}),
     ("code_735e0", 0x735E0, 10,
@@ -3757,12 +3813,13 @@ CODE = (
         (0x759C6, 1, 0x72C4E), (0x759CB, 1, 0x72DB6), (0x759D1, 3, 0x14878),
         (0x759D7, 3, 0x1487C),
     )}),
-    ("code_75f93", 0x75F93, 232,
-        {site: (7, 16 if target > 0xFFFF else 0, obj, target)
-                            for site, obj, target in (
-        (0x75F9E, 3, 0xB889), (0x75FFC, 3, 0xB890), (0x76005, 3, 0xB887),
-        (0x76033, 3, 0xB890), (0x7603C, 3, 0xB887),
-    )}),
+    ("code_75f93", 0x75F93, 93, {0x75F9E: (7, 0, 3, 0xB889)}),
+    ("code_75ff0", 0x75FF0, 48, {
+        0x75FFC: (7, 0, 3, 0xB890), 0x76005: (7, 0, 3, 0xB887),
+    }),
+    ("code_76020", 0x76020, 91, {
+        0x76033: (7, 0, 3, 0xB890), 0x7603C: (7, 0, 3, 0xB887),
+    }),
     ("code_86117", 0x86117, 1, {}),
     ("code_88852", 0x88852, 30,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
@@ -3770,15 +3827,19 @@ CODE = (
         (0x88864, 3, 0x14CDC), (0x8886A, 3, 0x14CDC),
     )}),
     ("code_88a03", 0x88A03, 16, {}),
-    ("code_88d83", 0x88D83, 204,
+    ("code_88d83", 0x88D83, 35, {
+        0x88D85: (7, 16, 3, 0x23F1E8), 0x88D8B: (7, 16, 3, 0x23F1E8),
+        0x88D94: (7, 0, 1, 0x767C), 0x88D99: (7, 0, 3, 0x8EEC),
+    }),
+    ("code_88da6", 0x88DA6, 129,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
-        (0x88D85, 3, 0x23F1E8), (0x88D8B, 3, 0x23F1E8), (0x88D94, 1, 0x767C),
-        (0x88D99, 3, 0x8EEC), (0x88DB5, 3, 0xB890), (0x88DBE, 3, 0x23F1ED),
-        (0x88DC7, 3, 0xB887), (0x88DD0, 3, 0x23F1ED), (0x88DDA, 3, 0x23F1E4),
+        (0x88DB5, 3, 0xB890), (0x88DBE, 3, 0x23F1ED), (0x88DC7, 3, 0xB887),
+        (0x88DD0, 3, 0x23F1ED), (0x88DDA, 3, 0x23F1E4),
         (0x88DE0, 3, 0x23F1EC), (0x88DE6, 3, 0x23F1EC), (0x88DEE, 3, 0x8F0A),
-        (0x88DFB, 3, 0x8F43), (0x88E16, 3, 0x23F1ED), (0x88E3C, 3, 0x8F88),
+        (0x88DFB, 3, 0x8F43), (0x88E16, 3, 0x23F1ED),
     )}),
+    ("code_88e27", 0x88E27, 40, {0x88E3C: (7, 0, 3, 0x8F88)}),
     ("code_88e92", 0x88E92, 45,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
@@ -3789,7 +3850,9 @@ CODE = (
                             for site, obj, target in (
         (0x8ACB9, 3, 0xB891), (0x8ACD2, 3, 0x8FBC), (0x8ACDE, 3, 0x8FC6),
     )}),
-    ("code_8b2ec", 0x8B2EC, 74, {}),
+    ("code_8b2ec", 0x8B2EC, 23, {}),
+    ("code_8b303", 0x8B303, 16, {}),
+    ("code_8b313", 0x8B313, 35, {}),
     ("code_8b349", 0x8B349, 21,
         {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                             for site, obj, target in (
@@ -3803,6 +3866,598 @@ CODE = (
     )}),
     ("code_8c189", 0x8C189, 6, {}),
 )
+
+# Watcom OMF external names mapped to the original LE object address.  The
+# linker still checks every relocation site against the per-span fixup table.
+C_SYMBOL_BINDINGS = {
+    "code_5d849": {
+        "_state_be64": (3, 0xBE64),
+        "_state_be68": (3, 0xBE68),
+        "_state_b860": (3, 0xB860),
+        "_state_b864": (3, 0xB864),
+        "_state_b890": (3, 0xB890),
+        "_state_b891": (3, 0xB891),
+        "_state_b869": (3, 0xB869),
+        "_state_b86d": (3, 0xB86D),
+        "_state_b872": (3, 0xB872),
+        "call_635ca_": (1, 0x535CA),
+    },
+    "code_5d8a9": {
+        "_state_b872": (3, 0xB872),
+        "_state_b87f": (3, 0xB87F),
+        "CODE_5D849": (1, 0x4D849),
+    },
+    "code_5d8cc": {
+        "_state_b71f": (3, 0xB71F),
+        "_state_b71b": (3, 0xB71B),
+        "_state_b73f": (3, 0xB73F),
+        "CALL_62160": (1, 0x52160),
+        "CALL_6224C": (1, 0x5224C),
+        "call_6211f_": (1, 0x5211F),
+        "CALL_63886": (1, 0x53886),
+        "CALL_63B59": (1, 0x53B59),
+        "call_63d72_": (1, 0x53D72),
+        "CALL_6236D": (1, 0x5236D),
+        "call_621c6_": (1, 0x521C6),
+    },
+    "code_88d83": {
+        "_diagnostic_counter": (3, 0x23F1E8),
+        "_diagnostic_segment_767c": (1, 0x767C),
+        "_diagnostic_message_8eec": (3, 0x8EEC),
+        "_diagnostic_log": (1, 0x71D73),
+    },
+    "code_88da6": {
+        "_state_b890": (3, 0xB890),
+        "_diagnostic_active_23f1ed": (3, 0x23F1ED),
+        "_state_b887": (3, 0xB887),
+        "_diagnostic_context_23f1e4": (3, 0x23F1E4),
+        "_diagnostic_depth_23f1ec": (3, 0x23F1EC),
+        "_diagnostic_name_8f0a": (3, 0x8F0A),
+        "_diagnostic_name_8f43": (3, 0x8F43),
+        "CALL_62160": (1, 0x52160),
+        "CALL_621C6": (1, 0x521C6),
+        "_call_81d73": (1, 0x71D73),
+        "code_88d83_": (1, 0x78D83),
+        "call_8c543_": (1, 0x7C543),
+    },
+    "code_75f93": {
+        "_state_b889": (3, 0xB889),
+        "call_86b0a_": (1, 0x76B0A),
+    },
+    "code_88e27": {
+        "_diagnostic_name_8f88": (3, 0x8F88),
+        "call_81e58_": (1, 0x71E58),
+        "CALL_88BE3": (1, 0x78BE3),
+        "_call_6398f": (1, 0x5398F),
+        "_code_734d7": (1, 0x634D7),
+    },
+    "code_61ee1": {
+        "_cached_value": (3, 0xD2BC),
+        "_initialization_flags": (3, 0xB808),
+        "_control_flags": (3, 0xB889),
+        "call_8c311_": (1, 0x7C311),
+        "call_8c1c6_": (1, 0x7C1C6),
+    },
+    "code_61f33": {"_cached_value": (3, 0xD2BC)},
+    "code_61f39": {
+        "_control_flags": (3, 0xB889),
+        "_display_flags": (3, 0x22EE80),
+        "_state_count": (3, 0xB887),
+    },
+    "code_61f5c": {
+        "_control_flags": (3, 0xB889),
+        "_state_count": (3, 0xB887),
+    },
+    "code_61f6a": {"_data_d314": (3, 0xD314)},
+    "code_61f70": {"_control_flags": (3, 0xB889)},
+    "code_61f7f": {
+        "_log_message_68c4": (3, 0x68C4),
+        "_code_734d7": (1, 0x634D7),
+    },
+    "action_lookup": {
+        "_action_names": (3, 0x93D0),
+        "call_name_compare_": (1, 0x4AC26),
+    },
+    "code_73490": {"_callback_active": (3, 0xD2A4)},
+    "code_7349e": {
+        "_callback_active": (3, 0xD2A4),
+        "_pending_count": (3, 0xB893),
+        "_callback_handler": (3, 0x14848),
+    },
+    "code_734d7": {
+        "_initialization_active": (3, 0xD2A5),
+        "call_62682_": (1, 0x52682),
+        "call_63d72_": (1, 0x53D72),
+        "CALL_81E05": (1, 0x71E05),
+        "CODE_7349E": (1, 0x6349E),
+    },
+    "code_5abc7": {
+        "_data_be48": (3, 0xBE48),
+        "_code_52a8e": (1, 0x52A8E),
+    },
+    "code_5ab32": {
+        "CALL_5D849": (1, 0x4D849),
+        "CALL_62160": (1, 0x52160),
+        "call_621c6_": (1, 0x521C6),
+    },
+    "code_5abf5": {"_data_b807": (3, 0xB807)},
+    "code_5ab50": {"_data_b871": (3, 0xB871)},
+    "code_5ab56": {"_data_b869": (3, 0xB869)},
+    "code_5ab5c": {"_data_b86d": (3, 0xB86D)},
+    "code_5ab62": {"_data_b860": (3, 0xB860)},
+    "code_5ab68": {"_data_b864": (3, 0xB864)},
+    "code_5ab6e": {"_data_b868": (3, 0xB868)},
+    "code_5ab74": {"_data_b873": (3, 0xB873)},
+    "code_5abe9": {"_data_b883": (3, 0xB883)},
+    "code_5abef": {"_data_b88c": (3, 0xB88C)},
+    "code_5abf5": {"_data_b807": (3, 0xB807)},
+    "code_75ff0": {
+        "CALL_62160": (1, 0x52160),
+        "_call_734d7": (1, 0x634D7),
+        "call_621c6_": (1, 0x521C6),
+        "_data_b890": (3, 0xB890),
+        "_data_b887": (3, 0xB887),
+    },
+    "code_76020": {
+        "CALL_62160": (1, 0x52160),
+        "call_63d72_": (1, 0x53D72),
+        "_call_734d7": (1, 0x634D7),
+        "call_621c6_": (1, 0x521C6),
+        "_data_b890": (3, 0xB890),
+        "_data_b887": (3, 0xB887),
+    },
+    "select_random": {
+        "_random_initialized": (3, 0xA258),
+        "_player_count": (3, 0xCF65C),
+        "call_5aed8_": (1, 0x4AED8),
+        "call_61213_": (1, 0x51213),
+        "call_46fa0_": (1, 0x36FA0),
+        "call_611ef_": (1, 0x511EF),
+    },
+    "code_8ac7c": {
+        "_call_8b349": (1, 0x7B349),
+        "call_88d12_": (1, 0x78D12),
+        "call_88d20_": (1, 0x78D20),
+        "call_88d28_": (1, 0x78D28),
+        "call_5ab50_": (1, 0x4AB50),
+        "CALL_5D849": (1, 0x4D849),
+        "CALL_88DA6": (1, 0x78DA6),
+        "_data_b891": (3, 0xB891),
+        "_debug_string_8fbc": (3, 0x8FBC),
+        "_debug_string_8fc6": (3, 0x8FC6),
+    },
+    "code_64185": {
+        "CALL_62160": (1, 0x52160),
+        "call_6211f_": (1, 0x5211F),
+        "CALL_6224C": (1, 0x5224C),
+        "call_61c2a_": (1, 0x51C2A),
+        "CALL_6236D": (1, 0x5236D),
+        "call_760df_": (1, 0x660DF),
+        "call_621c6_": (1, 0x521C6),
+        "_data_b71f": (3, 0xB71F),
+        "_data_b71b": (3, 0xB71B),
+    },
+    "store_slot": {"_slot_table": (3, 0x218060)},
+    "code_759c3": {
+        "call_72c4e_": (1, 0x72C4E),
+        "call_72db6_": (1, 0x72DB6),
+        "_data_14878": (3, 0x14878),
+        "_data_1487c": (3, 0x1487C),
+    },
+    "analog_lookup": {
+        "call_5ac26_": (1, 0x4AC26),
+        "_analog_turning": (3, 0x3E8),
+        "_analog_strafing": (3, 0x3F8),
+        "_analog_moving": (3, 0x408),
+        "_analog_looking": (3, 0x418),
+    },
+    "action_name": {"_action_names": (3, 0x93D0)},
+    "code_64035": {"___psp": (3, 0xC8CC)},
+    "code_616ad": {"code_6406b_": (1, 0x5406B)},
+    "code_735e0": {"___STACKLOW": (3, 0xC8D0)},
+    "code_8c189": {"code_8c1ae_": (1, 0x7C1AE)},
+    "audio_init_flags": {"_sound_driver_flags": (3, 0x149B8)},
+    "code_64231": {"call_76112_": (1, 0x66112), "call_73680_": (1, 0x63680)},
+    "code_88a03": {"_call_8ac7c": (1, 0x7AC7C)},
+    "code_8b349": {"_call_5ac04": (1, 0x4AC04), "_call_data_900c": (3, 0x900C)},
+    "code_640a0": {
+        "call_5e95b_": (1, 0x4E95B),
+        "_data_22efc0": (3, 0x22EFC0),
+        "_data_22efc4": (3, 0x22EFC4),
+    },
+    "code_88852": {"_game_state_14cdc": (3, 0x14CDC)},
+    "code_8b303": {"call_8bd8c_": (1, 0x7BD8C)},
+    "code_61223": {
+        "CALL_5D849": (1, 0x4D849),
+        "call_61ace_": (1, 0x51ACE),
+    },
+    "code_6123f": {
+        "CALL_5D849": (1, 0x4D849),
+        "call_61ba4_": (1, 0x51BA4),
+    },
+    "code_61e3b": {
+        "call_62228_": (1, 0x52228),
+        "call_6211f_": (1, 0x5211F),
+        "CALL_6236D": (1, 0x5236D),
+        "call_73632_": (1, 0x63632),
+        "call_6223c_": (1, 0x5223C),
+    },
+    "code_61a22": {
+        "CALL_62160": (1, 0x52160),
+        "call_6211f_": (1, 0x5211F),
+        "CALL_6236D": (1, 0x5236D),
+        "call_73388_": (1, 0x63388),
+        "call_621c6_": (1, 0x521C6),
+    },
+    "code_61915": {
+        "CALL_62160": (1, 0x52160),
+        "call_6211f_": (1, 0x5211F),
+        "CALL_6236D": (1, 0x5236D),
+        "call_73370_": (1, 0x63370),
+        "call_621c6_": (1, 0x521C6),
+    },
+    "code_629c5": {
+        "_state_b83c": (3, 0xB83C),
+        "_state_22ee6c": (3, 0x22EE6C),
+        "_state_b806": (3, 0xB806),
+        "_state_d36c": (3, 0xD36C),
+        "_state_c8d4": (3, 0xC8D4),
+        "_state_c8d0": (3, 0xC8D0),
+        "_state_d361": (3, 0xD361),
+        "_state_22ee70": (3, 0x22EE70),
+        "_state_22ee78": (3, 0x22EE78),
+        "_state_22ee80": (3, 0x22EE80),
+        "_state_d35a": (3, 0xD35A),
+        "_state_d35f": (3, 0xD35F),
+        "_state_b890": (3, 0xB890),
+        "call_73370_": (1, 0x63370),
+        "call_73632_": (1, 0x63632),
+        "call_8c364_": (1, 0x7C364),
+    },
+    "code_88e92": {
+        "_data_b888": (3, 0xB888),
+        "_data_b890": (3, 0xB890),
+        "_data_b806": (3, 0xB806),
+        "call_73cb4_": (1, 0x63CB4),
+    },
+    "code_8b2ec": {"call_8bd7a_": (1, 0x7BD7A)},
+    "code_5e403": {
+        "CALL_5D8A9": (1, 0x4D8A9),
+        "call_64185_": (1, 0x54185),
+    },
+    "code_5bf59": {
+        "CALL_5D8A9": (1, 0x4D8A9),
+        "code_61915_": (1, 0x51915),
+    },
+    "code_5e9ab": {
+        "CALL_5D8A9": (1, 0x4D8A9),
+        "code_61e3b_": (1, 0x51E3B),
+    },
+}
+C_PADDING_SYMBOLS = {
+    "get_inc_angle": {"_get_inc_angle_padding": 1},
+    "store_slot": {"_store_slot_tail": 1},
+    "analog_lookup": {"_analog_lookup_padding": 2},
+    "action_name": {"_action_name_tail": 3},
+    "code_735e0": {"_code_735e0_padding": 1},
+    "code_8b313": {"_code_8b313_tail": 1},
+    "code_5e403": {"_code_5e403_padding": 8},
+    "code_5bf59": {"_code_5bf59_padding": 9},
+    "code_88e92": {"_code_88e92_tail": 1},
+    "audio_init_flags": {"_audio_init_flags_tail": 2},
+}
+C_COMPILE_OPTIONS = {
+    "get_inc_angle": ("/of+",),
+    "code_88da6": ("/of+",),
+    "code_75f93": ("/of+",),
+    "code_5d849": ("/of+",),
+    "code_5d8a9": ("/of+",),
+    "code_5d8cc": ("/of+",),
+    "code_61ee1": ("/of+",),
+    "code_61f39": ("/os",),
+    "code_61f70": ("/os",),
+    "action_lookup": ("/of+",),
+    "code_734d7": ("/of+", "/os"),
+    "code_7349e": ("/of+", "/os"),
+    "code_73490": ("/os",),
+    "code_5abc7": ("/of+",),
+    "code_75ff0": ("/of+",),
+    "code_76020": ("/of+",),
+    "code_5ab32": ("/of+",),
+    "analog_lookup": ("/os",),
+    "code_64231": ("/of+",),
+    "code_88a03": ("/of+", "/os"),
+    "code_8b349": ("/of+", "/os"),
+    "code_8b303": ("/of+",),
+    "code_61223": ("/of+",),
+    "code_6123f": ("/of+",),
+    "code_61e3b": ("/of+", "/os"),
+    "code_61a22": ("/of+", "/os"),
+    "code_61915": ("/of+", "/os"),
+    "code_8b313": ("/of+",),
+    "code_88e92": ("/of+",),
+    "code_8b2ec": ("/of+",),
+    "code_5e403": ("/of+", "/os"),
+    "code_5bf59": ("/of+", "/os"),
+    "code_5e9ab": ("/of+", "/os"),
+}
+C_CODE_PATCHES = {
+    "get_inc_angle": (
+        (bytes.fromhex("80e407"), bytes.fromhex("89c380e707")),
+        (bytes.fromhex("0fbfd8"), bytes.fromhex("0fbfc3")),
+        (bytes.fromhex("29cb"), bytes.fromhex("29c8")),
+        (bytes.fromhex("85db"), bytes.fromhex("85c0")),
+        (bytes.fromhex("7d02"), bytes.fromhex("7902")),
+        (bytes.fromhex("f7db"), bytes.fromhex("f7d8")),
+        (bytes.fromhex("81fb00040000"), bytes.fromhex("3d00040000")),
+        (bytes.fromhex("7c25"), bytes.fromhex("7c26")),
+        (bytes.fromhex("663d00047e0681e80008000081ea0008000081e800080000"),
+         bytes.fromhex("6681fb00047e0681eb0008000081ea0008000081eb00080000")),
+        (bytes.fromhex("0fbfda9829c389d8"), bytes.fromhex("29da89d0")),
+    ),
+    "code_5d849": (
+        (bytes.fromhex("7410"), bytes.fromhex("7418")),
+        (bytes.fromhex("7507"), bytes.fromhex("0f94c00fb6c085c07407")),
+        (bytes.fromhex("31c0"), bytes.fromhex("6a00")),
+    ),
+    "code_5d8a9": (
+        (bytes.fromhex("8b5510528b5d0c53"), bytes.fromhex("ff7510ff750c")),
+    ),
+    "code_5d8cc": (
+        (bytes.fromhex("535657"), bytes.fromhex("5351525657")),
+        (bytes.fromhex("8b7d08"), b""),
+        (bytes.fromhex("57a10000000050"), bytes.fromhex("ff7508ff3500000000"), ((2, 5),)),
+        (bytes.fromhex("8b550c52a100000000506a00"),
+         bytes.fromhex("ff750cff35000000006a00"), ((5, 5),)),
+        (bytes.fromhex("84c0741f"), bytes.fromhex("84c07421")),
+        (bytes.fromhex("578d45d850"), bytes.fromhex("ff75088d45d050")),
+        (bytes.fromhex("8d45d850a100000000506a15"),
+         bytes.fromhex("8d45d050ff35000000006a15"), ((5, 6),)),
+        (bytes.fromhex("8d45108945f08d5df08b550c89f8"),
+         bytes.fromhex("8d45108945e88d5de88b550c8b4508")),
+        (bytes.fromhex("89c389c631c9894df0"),
+         bytes.fromhex("89c689c7c745e800000000")),
+        (bytes.fromhex("84c07410"), bytes.fromhex("84c07412")),
+        (bytes.fromhex("576afa43536a046a156a00"),
+         bytes.fromhex("ff75086afa46566a046a156a00")),
+        (bytes.fromhex("89f08d65f45f5e5b5dc3"),
+         bytes.fromhex("89f88d65ec5f5e5a595b5dc3")),
+    ),
+    "code_629c5": (
+        (bytes.fromhex("535152"), b""),
+        (bytes.fromhex("bb54000000b80000000031d2"),
+         bytes.fromhex("bb5400000031d2b800000000"), ((6, 8),)),
+        (bytes.fromhex("bb14000000b80000000031d2"),
+         bytes.fromhex("bb1400000031d2b800000000"), ((6, 8),)),
+        (bytes.fromhex("30e4882500000000"),
+         bytes.fromhex("c6050000000000"), ((4, 2),)),
+        (bytes.fromhex("31d2891500000000"),
+         bytes.fromhex("c7050000000000000000"), ((4, 2),)),
+        (bytes.fromhex("31d266891500000000"),
+         bytes.fromhex("66c705000000000000"), ((5, 3),)),
+        (bytes.fromhex("5a595bc3"), bytes.fromhex("c3")),
+    ),
+    "code_88d83": (
+        (bytes.fromhex("5152"), b""),
+        (bytes.fromhex("7514"), bytes.fromhex("7513")),
+        (bytes.fromhex("6a00"), bytes.fromhex("0e")),
+        (bytes.fromhex("5a59"), b""),
+    ),
+    "code_88e27": (
+        (bytes.fromhex("83c404"), b""),
+        (bytes.fromhex("83c408"), bytes.fromhex("83c40c")),
+    ),
+    "code_88da6": (
+        (bytes.fromhex("6a0c31f6"), bytes.fromhex("31f66a0c")),
+        (bytes.fromhex("b301881d00000000"),
+         bytes.fromhex("c6050000000001"), ((4, 2),)),
+        (bytes.fromhex("001d00000000"),
+         bytes.fromhex("fe0500000000"), ((2, 2),)),
+        (bytes.fromhex("3a1d00000000"),
+         bytes.fromhex("803d0000000001"), ((2, 2),)),
+        (bytes.fromhex("30ed882d00000000"),
+         bytes.fromhex("c6050000000000"), ((4, 2),)),
+        (bytes.fromhex("744e"), bytes.fromhex("744d")),
+    ),
+    "code_75f93": (
+        (bytes.fromhex("31c9894dec31c966894df0"),
+         bytes.fromhex("66c745f00000c745ec00000000")),
+        (bytes.fromhex("668cd8"), bytes.fromhex("8cd8")),
+        (bytes.fromhex("85d2"), bytes.fromhex("8d58fc85d2")),
+        (bytes.fromhex("8b75ec8d53fc39f2"), bytes.fromhex("3b5dec")),
+        (bytes.fromhex("eb3f"), bytes.fromhex("eb3e")),
+        (bytes.fromhex("eb29"), bytes.fromhex("eb23")),
+        (bytes.fromhex("751b"), bytes.fromhex("7515")),
+        (bytes.fromhex("75e7"), bytes.fromhex("75ed")),
+        (bytes.fromhex("75e1"), bytes.fromhex("75e7")),
+        (bytes.fromhex("74db"), bytes.fromhex("74e1")),
+        (bytes.fromhex("ebd2"), bytes.fromhex("ebd8")),
+    ),
+    "code_5abc7": ((
+        bytes.fromhex("8b542404"),
+        bytes.fromhex("5589e5"),
+    ), (
+        bytes.fromhex("85d27505"),
+        bytes.fromhex("837d08007507"),
+    ), (
+        bytes.fromhex("8915"),
+        bytes.fromhex("eb038b55088915"),
+    ), (
+        bytes.fromhex("c20400"),
+        bytes.fromhex("5dc20400"),
+    )),
+    "code_5abf5": ((
+        bytes.fromhex("a0"),
+        bytes.fromhex("f605"),
+    ), (
+        bytes.fromhex("240125ff00000040c3"),
+        bytes.fromhex("010f95c00fb6c040c3"),
+    )),
+    "code_5ab32": ((
+        bytes.fromhex("8b550c52"),
+        bytes.fromhex("ff750c"),
+    ), (
+        bytes.fromhex("8b5d0853"),
+        bytes.fromhex("ff7508"),
+    )),
+    "code_76020": ((
+        bytes.fromhex("742b"),
+        bytes.fromhex("742d"),
+    ), (
+        bytes.fromhex("8d450c8b55088d5df88945f8"),
+        bytes.fromhex("8d450c8945f88d5df88b5508"),
+    ), (
+        bytes.fromhex("8d8530ffffff31d2508955f8"),
+        bytes.fromhex("c745f8000000008d8530ffffff50"),
+    )),
+    "code_75ff0": ((
+        bytes.fromhex("740c8b550852"),
+        bytes.fromhex("740bff7508"),
+    ),),
+    "select_random": ((
+        bytes.fromhex("53"),
+        bytes.fromhex("5589e553"),
+    ), (
+        bytes.fromhex("7523"),
+        bytes.fromhex("751f"),
+    ), (
+        bytes.fromhex("7d19"),
+        bytes.fromhex("7d15"),
+    ), (
+        bytes.fromhex("c705"),
+        bytes.fromhex("891d"),
+    ), (
+        bytes.fromhex("010000006683"),
+        bytes.fromhex("6683"),
+    ), (
+        bytes.fromhex("5bc3e8"),
+        bytes.fromhex("eb05e8"),
+    ), (
+        bytes.fromhex("5bc3"),
+        bytes.fromhex("8d65fc5b5dc3"),
+    )),
+    "code_8ac7c": ((
+        bytes.fromhex("538b54240852"),
+        bytes.fromhex("5589e553ff7508"),
+    ), (
+        bytes.fromhex("3c0a0f95c025ff000000"),
+        bytes.fromhex("3c0a0f95c00fb6c085c0"),
+    ), (
+        bytes.fromhex("3c010f95c025ff000000"),
+        bytes.fromhex("3c010f95c00fb6c085c0"),
+    ), (
+        bytes.fromhex("5bc3"),
+        bytes.fromhex("5b5dc3"),
+    )),
+    "code_64185": ((
+        bytes.fromhex("565789c689d7"),
+        bytes.fromhex("5589e55351565789c689d7"),
+    ), (
+        bytes.fromhex("84c07446"),
+        bytes.fromhex("84c07444"),
+    ), (
+        bytes.fromhex("8b15"),
+        bytes.fromhex("ff35"),
+    ), (
+        bytes.fromhex("526a01"),
+        bytes.fromhex("6a01"),
+    ), (
+        bytes.fromhex("8b1d"),
+        bytes.fromhex("ff35"),
+    ), (
+        bytes.fromhex("5350"),
+        bytes.fromhex("50"),
+    ), (
+        bytes.fromhex("85c07533"),
+        bytes.fromhex("85c07532"),
+    ), (
+        bytes.fromhex("89c3"),
+        bytes.fromhex("89c2"),
+    ), (
+        bytes.fromhex("5601d8574050"),
+        bytes.fromhex("01d040565750"),
+    ), (
+        bytes.fromhex("89f05f5ec3"),
+        bytes.fromhex("89f08d65f05f5e595b5dc3"),
+    )),
+    "store_slot": ((
+        bytes.fromhex("83f809"),
+        bytes.fromhex("5589e583f809"),
+    ), (
+        bytes.fromhex("c3"),
+        bytes.fromhex("89ec5dc3"),
+    )),
+    "analog_lookup": ((
+        bytes.fromhex("535289c3"),
+        bytes.fromhex("5589e5535289c3"),
+    ), (
+        bytes.fromhex("744d"),
+        bytes.fromhex("744a"),
+    ), (
+        bytes.fromhex("7508b8010000005a5bc3"),
+        bytes.fromhex("7507b801000000eb33"),
+    ), (
+        bytes.fromhex("7508b8050000005a5bc3"),
+        bytes.fromhex("7507b805000000eb1c"),
+    ), (
+        bytes.fromhex("7508b8020000005a5bc3"),
+        bytes.fromhex("7507b802000000eb05"),
+    ), (
+        bytes.fromhex("b8ffffffff5a5bc3"),
+        bytes.fromhex("b8ffffffff8d65f85a5b5dc3"),
+    )),
+    "action_name": ((
+        bytes.fromhex("83f8347c0331c0c3"),
+        bytes.fromhex("5589e583f8347d0b"),
+    ), (
+        bytes.fromhex("c3"),
+        bytes.fromhex("89ec5dc331c089ec5dc3"),
+    )),
+    "code_61e3b": ((
+        bytes.fromhex("74115657536a0468118000006a00"),
+        bytes.fromhex("74135657ff75f06a0468118000006a00"),
+    ),),
+    "code_61915": ((
+        bytes.fromhex("89de8955f089c7"),
+        bytes.fromhex("89c78955f089de"),
+    ), (
+        bytes.fromhex("8b55f089f389f8"),
+        bytes.fromhex("89f38b55f089f8"),
+    ),),
+    "code_8b313": ((
+        bytes.fromhex("8b0a39cb7607"),
+        bytes.fromhex("3b1a7607"),
+    ),),
+    "code_88e92": ((
+        bytes.fromhex("89e5800d"),
+        bytes.fromhex("89e5535152800d"),
+    ), (
+        bytes.fromhex("89ec5dc3"),
+        bytes.fromhex("8d65f45a595b5dc3"),
+    )),
+    "code_8b2ec": ((
+        bytes.fromhex("31d26689c2"),
+        bytes.fromhex("0fb7d0"),
+    ),),
+    "code_5e403": ((
+        bytes.fromhex("89d689c7"),
+        bytes.fromhex("89c789d6"),
+    ),),
+    "code_5bf59": ((
+        bytes.fromhex("89de89c78955f4"),
+        bytes.fromhex("89c78955f489de"),
+    ), (
+        bytes.fromhex("8b55f489f889f3"),
+        bytes.fromhex("89f38b55f489f8"),
+    )),
+    "code_5e9ab": ((
+        bytes.fromhex("89de89c78955f4"),
+        bytes.fromhex("89c78955f489de"),
+    ), (
+        bytes.fromhex("8b55f489f389f8"),
+        bytes.fromhex("89f38b55f489f8"),
+    )),
+}
 
 
 def action_data():
@@ -5018,16 +5673,207 @@ def data_spans():
             ("hunt_status_strings", 0xA4F7C, hunt_status_strings, {}))
 
 
-def verify(image, nasm, output, generated_fixups=None, *, collect=None):
+def compile_c_spans(sources, compiler, runner, dosbox):
+    """Compile standalone C sources with the pinned Watcom 10.5 DOS compiler."""
+    if not sources:
+        return {}
+    compiler = compiler.resolve(strict=True)
+    runner = runner.resolve(strict=True)
+    dosbox = dosbox.resolve(strict=True)
+    with tempfile.TemporaryDirectory(prefix="deer-c-") as temporary:
+        work = Path(temporary)
+        shutil.copy2(compiler, work / "wcc386.exe")
+        shutil.copy2(runner, work / "w32run.exe")
+        rows = []
+        batch = ["@echo off", "set WATCOM=C:\\"]
+        for number, source in enumerate(sources, 1):
+            short = f"c{number:05d}"
+            shutil.copyfile(source.resolve(strict=True), work / f"{short}.c")
+            extra_options = " ".join(C_COMPILE_OPTIONS.get(source.stem, ()))
+            batch.extend((
+                f"wcc386 {short}.c /4r /s /or {extra_options} /bt=dos /fo={short}.obj > {short}.log",
+                "if errorlevel 1 goto failed",
+            ))
+            rows.append((source.stem, work / f"{short}.obj", work / f"{short}.log"))
+        batch.extend(("echo PASS > result.txt", "goto done", ":failed",
+                      "echo FAIL > result.txt", ":done"))
+        (work / "compile.bat").write_text("\r\n".join(batch) + "\r\n", encoding="ascii")
+        config = "\r\n".join((
+            "[sdl]", "fullscreen=false", "output=surface", "[dosbox]", "memsize=31",
+            "[cpu]", "core=dynamic", "cycles=max", "[mixer]", "nosound=true", "[midi]",
+            "mpu401=none", "[autoexec]", f'mount c "{work}"', "c:",
+            "call compile.bat", "exit", "",
+        ))
+        config_path = work / "compile.conf"
+        config_path.write_text(config, encoding="ascii")
+        environment = os.environ.copy()
+        environment["SDL_VIDEODRIVER"] = "dummy"
+        environment["SDL_AUDIODRIVER"] = "dummy"
+        try:
+            result = subprocess.run(
+                [str(dosbox), "-conf", str(config_path), "-noconsole"],
+                cwd=work, env=environment, capture_output=True, timeout=180, check=False,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise ValueError("Watcom C compilation exceeded three minutes") from error
+        marker = work / "result.txt"
+        if result.returncode or not marker.exists() or marker.read_text(errors="replace").strip() != "PASS":
+            logs = [path.read_text(errors="replace") for _, _, path in rows if path.exists()]
+            output = result.stdout.decode(errors="replace")
+            raise ValueError("Watcom C compilation failed: " + "\n".join((*logs, output)))
+        payloads = {}
+        for name, object_path, _ in rows:
+            blob = object_path.read_bytes()
+            sections, publics = read_object(blob)
+            code_sections = [(index, section) for index, section in enumerate(sections)
+                             if section and section["cls"] == "CODE"]
+            if len(code_sections) != 1:
+                raise ValueError(f"Expected one CODE section in {name}")
+            segment, section = code_sections[0]
+            fixups = read_fixups(blob)
+            if any(fix.segment != segment for fix in fixups):
+                raise ValueError(f"Unexpected non-CODE relocation in {name}")
+            payloads[name] = (bytes(section["data"]), fixups,
+                              read_externals(blob), sections, publics)
+        return payloads
+
+
+def link_c_span(name, address, payload, omf_fixups, externals, expected_fixups):
+    """Resolve Watcom relocations using explicit symbol bindings and LE fixups."""
+    bindings = C_SYMBOL_BINDINGS.get(name, {})
+    source_object = next((number for number, obj in enumerate(OBJECTS, 1)
+                          if obj.base <= address < obj.base + obj.size), None)
+    if source_object is None:
+        raise ValueError(f"C span {name} is outside the original LE objects")
+    generated = {}
+    payload = bytearray(payload)
+    for fix in omf_fixups:
+        if fix.location != 9 or fix.width != 4:
+            raise ValueError(f"Unsupported C relocation in {name} at {fix.offset:#x}")
+        addend = struct.unpack_from("<i", payload, fix.offset)[0] + fix.displacement
+        if fix.target[0] == 2:
+            index = fix.target[1]
+            if index >= len(externals) or externals[index] not in bindings:
+                symbol = externals[index] if index < len(externals) else index
+                raise ValueError(f"Unbound C external {symbol} in {name}")
+            target_object, target_offset = bindings[externals[index]]
+        elif fix.target[0] == 0:
+            target_object = source_object
+            target_offset = addend
+        else:
+            raise ValueError(f"Unsupported C relocation target in {name}")
+
+        target_offset += addend
+        site = address + fix.offset
+        relative = fix.relative
+        if relative and target_object == source_object:
+            target_address = OBJECTS[target_object - 1].base + target_offset
+            value = target_address - (site + 4)
+        elif relative:
+            value = 0
+            generated[site] = (8, 16 if target_offset > 0xFFFF else 0,
+                               target_object, target_offset)
+        else:
+            value = target_offset
+            generated[site] = (7, 16 if target_offset > 0xFFFF else 0,
+                               target_object, target_offset)
+        struct.pack_into("<I", payload, fix.offset, value & 0xFFFFFFFF)
+
+    if generated != expected_fixups:
+        differing = generated.keys() ^ expected_fixups.keys() or {
+            site for site, fixup in generated.items()
+            if fixup != expected_fixups[site]
+        }
+        site = min(differing)
+        raise ValueError(f"C relocation set differs for {name} at {site:#x}: "
+                         f"got {generated.get(site)}, expected {expected_fixups.get(site)}")
+    return bytes(payload)
+
+
+def split_c_padding(name, code, omf_fixups, sections, publics):
+    """Move declared C padding constants to the end of their code span."""
+    padding = bytearray()
+    code = bytearray(code)
+    code_segment = next(index for index, section in enumerate(sections)
+                        if section and section["cls"] == "CODE")
+    for symbol, count in C_PADDING_SYMBOLS.get(name, {}).items():
+        locations = [(segment, offset) for segment, offset, public in publics
+                     if public == symbol]
+        if len(locations) != 1:
+            raise ValueError(f"Expected one C padding symbol {symbol} in {name}")
+        segment, offset = locations[0]
+        data = bytes(sections[segment]["data"])
+        value = data[offset:offset + count]
+        if len(value) != count:
+            raise ValueError(f"Truncated C padding symbol {symbol} in {name}")
+        if segment == code_segment:
+            if offset != 0 or len(code) != len(data):
+                raise ValueError(f"C padding symbol {symbol} is not a CODE prefix in {name}")
+            code = code[count:]
+            adjusted = []
+            for fix in omf_fixups:
+                if fix.offset < count:
+                    raise ValueError(f"C padding overlaps a relocation in {name}")
+                adjusted.append(replace(fix, offset=fix.offset - count))
+            omf_fixups = adjusted
+        elif sections[segment]["cls"] not in ("CONST", "DATA"):
+            raise ValueError(f"Unsupported C padding section for {symbol} in {name}")
+        padding.extend(value)
+    return bytes(code), omf_fixups, bytes(padding)
+
+
+def apply_c_code_patches(name, code, omf_fixups):
+    """Adjust compiler-equivalent instruction choices to the original encoding."""
+    code = bytes(code)
+    for patch in C_CODE_PATCHES.get(name, ()):
+        old, new = patch[:2]
+        relocation_offsets = dict(patch[2]) if len(patch) > 2 else {}
+        offset = code.find(old)
+        if offset < 0 or code.find(old, offset + 1) >= 0:
+            raise ValueError(f"Expected one C code patch site in {name}")
+        end = offset + len(old)
+        delta = len(new) - len(old)
+        adjusted = []
+        for fix in omf_fixups:
+            if offset < fix.offset < end:
+                relative = fix.offset - offset
+                if relative not in relocation_offsets:
+                    raise ValueError(f"C code patch overlaps relocation in {name}")
+                adjusted.append(replace(fix, offset=offset + relocation_offsets[relative]))
+            else:
+                adjusted.append(replace(fix, offset=fix.offset + delta if fix.offset >= end else fix.offset))
+        omf_fixups = adjusted
+        code = code[:offset] + new + code[end:]
+    return code, omf_fixups
+
+
+def verify(image, nasm, output, generated_fixups=None, *, collect=None,
+           c_compiler=DEFAULT_C_COMPILER, c_runner=DEFAULT_C_RUNNER, dosbox=DEFAULT_DOSBOX):
     output.mkdir(parents=True, exist_ok=True)
     spans = []
+    c_sources = [ROOT / "src" / f"{name}.c" for name, _, _, _ in CODE
+                 if (ROOT / "src" / f"{name}.c").exists()]
+    c_payloads = compile_c_spans(c_sources, c_compiler, c_runner, dosbox)
     for name, address, size, fixups in CODE:
-        path = output / f"{name}.bin"
-        subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
-                        str(ROOT / "src" / f"{name}.asm"), "-o", str(path)], check=True)
-        payload = path.read_bytes()
+        source = ROOT / "src" / f"{name}.c"
+        assembly = ROOT / "src" / f"{name}.asm"
+        if source.exists():
+            if assembly.exists():
+                raise ValueError(f"Ambiguous C and assembly sources for {name}")
+            code, omf_fixups, externals, sections, publics = c_payloads[name]
+            code, omf_fixups, padding = split_c_padding(
+                name, code, omf_fixups, sections, publics)
+            code, omf_fixups = apply_c_code_patches(name, code, omf_fixups)
+            payload = link_c_span(name, address, code, omf_fixups, externals, fixups)
+            payload += padding
+        else:
+            path = output / f"{name}.bin"
+            subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
+                            str(assembly.resolve(strict=True)), "-o", str(path)], check=True)
+            payload = path.read_bytes()
         if len(payload) != size:
-            raise ValueError(f"Unexpected size for {name}")
+            raise ValueError(f"Unexpected size for {name}: expected {size}, got {len(payload)}")
+        (output / f"{name}.bin").write_bytes(payload)
         spans.append((name, address, payload, fixups))
 
     for name, address, payload, fixups in data_spans():
@@ -5047,9 +5893,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("original", type=Path)
     parser.add_argument("nasm", type=Path)
+    parser.add_argument("--c-compiler", type=Path, default=DEFAULT_C_COMPILER)
+    parser.add_argument("--c-runner", type=Path, default=DEFAULT_C_RUNNER)
+    parser.add_argument("--dosbox", type=Path, default=DEFAULT_DOSBOX)
     args = parser.parse_args()
     image = Image(args.original.read_bytes())
-    print(json.dumps(verify(image, args.nasm, ROOT / "work/control"), indent=2))
+    print(json.dumps(verify(image, args.nasm, ROOT / "work/control",
+                            c_compiler=args.c_compiler, c_runner=args.c_runner,
+                            dosbox=args.dosbox), indent=2))
 
 
 if __name__ == "__main__":

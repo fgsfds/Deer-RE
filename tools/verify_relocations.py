@@ -45,7 +45,10 @@ def ordered_pages(order, known, reference):
     return pages, generated_records
 
 
-def generate_sections(image, upstream, watcom_lib386, nasm, work, *, collect=None):
+def generate_sections(image, upstream, watcom_lib386, nasm, work, *, collect=None,
+                      c_compiler=verify_control.DEFAULT_C_COMPILER,
+                      c_runner=verify_control.DEFAULT_C_RUNNER,
+                      dosbox=verify_control.DEFAULT_DOSBOX):
     data = ROOT / "tools/data"
     known = {}
     bindings = json.loads((data / "enginera-bindings.json").read_text(encoding="utf-8"))
@@ -60,7 +63,8 @@ def generate_sections(image, upstream, watcom_lib386, nasm, work, *, collect=Non
     }
     link_libraries.verify(image, libraries, manifest, work / "libraries", known, collect=collect)
     if nasm:
-        verify_control.verify(image, nasm, work / "control", known, collect=collect)
+        verify_control.verify(image, nasm, work / "control", known, collect=collect,
+                              c_compiler=c_compiler, c_runner=c_runner, dosbox=dosbox)
     return known
 
 
@@ -71,10 +75,15 @@ def main():
     parser.add_argument("upstream", type=Path)
     parser.add_argument("watcom_lib386", type=Path)
     parser.add_argument("--nasm", type=Path, help="include standalone RDH code and action table fixups")
+    parser.add_argument("--c-compiler", type=Path, default=verify_control.DEFAULT_C_COMPILER)
+    parser.add_argument("--c-runner", type=Path, default=verify_control.DEFAULT_C_RUNNER)
+    parser.add_argument("--dosbox", type=Path, default=verify_control.DEFAULT_DOSBOX)
     args = parser.parse_args()
     image = Image(args.original.read_bytes())
     data = ROOT / "tools/data"
-    known = generate_sections(image, args.upstream, args.watcom_lib386, args.nasm, ROOT / "work")
+    known = generate_sections(image, args.upstream, args.watcom_lib386, args.nasm, ROOT / "work",
+                              c_compiler=args.c_compiler, c_runner=args.c_runner,
+                              dosbox=args.dosbox)
     order = json.loads((data / "relocation-order.json").read_text(encoding="utf-8"))
     pages, generated = ordered_pages(order, known, image.fixups)
     prefix = build_loader(args.setmain.read_bytes(), pages)
