@@ -3824,6 +3824,7 @@ C_SYMBOL_BINDINGS = {
     "code_8c189": {"code_8c1ae_": (1, 0x7C1AE)},
     "audio_init_flags": {"_sound_driver_flags": (3, 0x149B8)},
     "code_64231": {"call_76112_": (1, 0x66112), "call_73680_": (1, 0x63680)},
+    "code_88a03": {"_call_8ac7c": (1, 0x7AC7C)},
 }
 C_PADDING_SYMBOLS = {
     "code_735e0": {"_code_735e0_padding": 1},
@@ -3831,6 +3832,7 @@ C_PADDING_SYMBOLS = {
 }
 C_COMPILE_OPTIONS = {
     "code_64231": ("/of+",),
+    "code_88a03": ("/of+", "/os"),
 }
 
 
