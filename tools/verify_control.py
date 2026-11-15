@@ -3823,10 +3823,14 @@ C_SYMBOL_BINDINGS = {
     "code_735e0": {"___STACKLOW": (3, 0xC8D0)},
     "code_8c189": {"code_8c1ae_": (1, 0x7C1AE)},
     "audio_init_flags": {"_sound_driver_flags": (3, 0x149B8)},
+    "code_64231": {"call_76112_": (1, 0x66112), "call_73680_": (1, 0x63680)},
 }
 C_PADDING_SYMBOLS = {
     "code_735e0": {"_code_735e0_padding": 1},
     "audio_init_flags": {"_audio_init_flags_tail": 2},
+}
+C_COMPILE_OPTIONS = {
+    "code_64231": ("/of+",),
 }
 
 
@@ -5059,8 +5063,9 @@ def compile_c_spans(sources, compiler, runner, dosbox):
         for number, source in enumerate(sources, 1):
             short = f"c{number:05d}"
             shutil.copyfile(source.resolve(strict=True), work / f"{short}.c")
+            extra_options = " ".join(C_COMPILE_OPTIONS.get(source.stem, ()))
             batch.extend((
-                f"wcc386 {short}.c /4r /s /or /bt=dos /fo={short}.obj > {short}.log",
+                f"wcc386 {short}.c /4r /s /or {extra_options} /bt=dos /fo={short}.obj > {short}.log",
                 "if errorlevel 1 goto failed",
             ))
             rows.append((source.stem, work / f"{short}.obj", work / f"{short}.log"))
