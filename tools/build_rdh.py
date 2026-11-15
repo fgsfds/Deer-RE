@@ -11,7 +11,8 @@ from verify_relocations import generate_sections, ordered_pages
 TARGET_SIZE = 833_363
 
 
-def build(setmain, upstream, watcom_lib386, nasm):
+def build(setmain, upstream, watcom_lib386, nasm,
+          c_compiler=None, c_runner=None, dosbox=None):
     page_size = 4096
     sizes = [min(obj.size, obj.pages * page_size) for obj in OBJECTS]
     payloads = [bytearray(size) for size in sizes]
@@ -29,7 +30,10 @@ def build(setmain, upstream, watcom_lib386, nasm):
 
     with TemporaryDirectory(prefix="deer-re-") as directory:
         fixups = generate_sections(None, upstream, watcom_lib386, nasm,
-                                   Path(directory), collect=collect)
+                                   Path(directory), collect=collect,
+                                   c_compiler=c_compiler or ROOT / "tools/inputs/watcom/binw/wcc386.exe",
+                                   c_runner=c_runner or ROOT / "tools/inputs/watcom/binw/w32run.exe",
+                                   dosbox=dosbox or ROOT / "tools/inputs/dosbox/DOSBox.exe")
     for obj, size, intervals in zip(OBJECTS, sizes, spans, strict=True):
         cursor = obj.base
         for start, end in sorted(intervals):
@@ -60,9 +64,15 @@ def main():
     parser.add_argument("watcom_lib386", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--nasm", type=Path, required=True)
+    parser.add_argument("--c-compiler", type=Path,
+                        default=ROOT / "tools/inputs/watcom/binw/wcc386.exe")
+    parser.add_argument("--c-runner", type=Path,
+                        default=ROOT / "tools/inputs/watcom/binw/w32run.exe")
+    parser.add_argument("--dosbox", type=Path, default=ROOT / "tools/inputs/dosbox/DOSBox.exe")
     parser.add_argument("--compare", type=Path, help="byte-compare with the original RDH.EXE")
     args = parser.parse_args()
-    result = build(args.stub_source.read_bytes(), args.upstream, args.watcom_lib386, args.nasm)
+    result = build(args.stub_source.read_bytes(), args.upstream, args.watcom_lib386,
+                   args.nasm, args.c_compiler, args.c_runner, args.dosbox)
     if args.compare and result != args.compare.read_bytes():
         raise ValueError("Built executable differs from the supplied comparison file")
     args.output.write_bytes(result)

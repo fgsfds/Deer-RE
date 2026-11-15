@@ -5,3 +5,6 @@ __pycache__/
 *.exe
 *.obj
 !/ci/inputs/**
+!/tools/inputs/watcom/binw/wcc386.exe
+!/tools/inputs/watcom/binw/w32run.exe
+!/tools/inputs/dosbox/DOSBox.exe

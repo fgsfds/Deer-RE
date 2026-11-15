@@ -1,12 +1,22 @@
 """Build and verify standalone RDH code and control data spans."""
 import argparse
 import json
+import os
 from pathlib import Path
+import shutil
 import struct
 import subprocess
+import tempfile
 
 from link_enginera import verify_span
+from omf_fixups import read_fixups
+from omf_sections import read_object
 from rdh import Image, ROOT
+
+INPUTS = ROOT / "tools/inputs"
+DEFAULT_C_COMPILER = INPUTS / "watcom/binw/wcc386.exe"
+DEFAULT_C_RUNNER = INPUTS / "watcom/binw/w32run.exe"
+DEFAULT_DOSBOX = INPUTS / "dosbox/DOSBox.exe"
 
 ACTION_NAMES = (
     "Move_Forward", "Move_Backward", "Turn_Left", "Turn_Right", "Strafe", "Fire",
@@ -5018,16 +5028,89 @@ def data_spans():
             ("hunt_status_strings", 0xA4F7C, hunt_status_strings, {}))
 
 
-def verify(image, nasm, output, generated_fixups=None, *, collect=None):
+def compile_c_spans(sources, compiler, runner, dosbox):
+    """Compile standalone C sources with the pinned Watcom 10.5 DOS compiler."""
+    if not sources:
+        return {}
+    compiler = compiler.resolve(strict=True)
+    runner = runner.resolve(strict=True)
+    dosbox = dosbox.resolve(strict=True)
+    with tempfile.TemporaryDirectory(prefix="deer-c-") as temporary:
+        work = Path(temporary)
+        shutil.copy2(compiler, work / "wcc386.exe")
+        shutil.copy2(runner, work / "w32run.exe")
+        rows = []
+        batch = ["@echo off", "set WATCOM=C:\\"]
+        for number, source in enumerate(sources, 1):
+            short = f"c{number:05d}"
+            shutil.copyfile(source.resolve(strict=True), work / f"{short}.c")
+            batch.extend((
+                f"wcc386 {short}.c /4r /s /or /bt=dos /fo={short}.obj > {short}.log",
+                "if errorlevel 1 goto failed",
+            ))
+            rows.append((source.stem, work / f"{short}.obj", work / f"{short}.log"))
+        batch.extend(("echo PASS > result.txt", "goto done", ":failed",
+                      "echo FAIL > result.txt", ":done"))
+        (work / "compile.bat").write_text("\r\n".join(batch) + "\r\n", encoding="ascii")
+        config = "\r\n".join((
+            "[sdl]", "fullscreen=false", "output=surface", "[dosbox]", "memsize=31",
+            "[cpu]", "core=dynamic", "cycles=max", "[mixer]", "nosound=true", "[midi]",
+            "mpu401=none", "[autoexec]", f'mount c "{work}"', "c:",
+            "call compile.bat", "exit", "",
+        ))
+        config_path = work / "compile.conf"
+        config_path.write_text(config, encoding="ascii")
+        environment = os.environ.copy()
+        environment["SDL_VIDEODRIVER"] = "dummy"
+        environment["SDL_AUDIODRIVER"] = "dummy"
+        try:
+            result = subprocess.run(
+                [str(dosbox), "-conf", str(config_path), "-noconsole"],
+                cwd=work, env=environment, capture_output=True, timeout=180, check=False,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise ValueError("Watcom C compilation exceeded three minutes") from error
+        marker = work / "result.txt"
+        if result.returncode or not marker.exists() or marker.read_text(errors="replace").strip() != "PASS":
+            logs = [path.read_text(errors="replace") for _, _, path in rows if path.exists()]
+            output = result.stdout.decode(errors="replace")
+            raise ValueError("Watcom C compilation failed: " + "\n".join((*logs, output)))
+        payloads = {}
+        for name, object_path, _ in rows:
+            blob = object_path.read_bytes()
+            if read_fixups(blob):
+                raise ValueError(f"Unexpected relocation in standalone C module {name}")
+            sections, _ = read_object(blob)
+            code = [bytes(section["data"]) for section in sections
+                    if section and section["cls"] == "CODE"]
+            if len(code) != 1:
+                raise ValueError(f"Expected one CODE section in {name}")
+            payloads[name] = code[0]
+        return payloads
+
+
+def verify(image, nasm, output, generated_fixups=None, *, collect=None,
+           c_compiler=DEFAULT_C_COMPILER, c_runner=DEFAULT_C_RUNNER, dosbox=DEFAULT_DOSBOX):
     output.mkdir(parents=True, exist_ok=True)
     spans = []
+    c_sources = [ROOT / "src" / f"{name}.c" for name, _, _, _ in CODE
+                 if (ROOT / "src" / f"{name}.c").exists()]
+    c_payloads = compile_c_spans(c_sources, c_compiler, c_runner, dosbox)
     for name, address, size, fixups in CODE:
-        path = output / f"{name}.bin"
-        subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
-                        str(ROOT / "src" / f"{name}.asm"), "-o", str(path)], check=True)
-        payload = path.read_bytes()
+        source = ROOT / "src" / f"{name}.c"
+        assembly = ROOT / "src" / f"{name}.asm"
+        if source.exists():
+            if assembly.exists():
+                raise ValueError(f"Ambiguous C and assembly sources for {name}")
+            payload = c_payloads[name]
+        else:
+            path = output / f"{name}.bin"
+            subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
+                            str(assembly.resolve(strict=True)), "-o", str(path)], check=True)
+            payload = path.read_bytes()
         if len(payload) != size:
             raise ValueError(f"Unexpected size for {name}")
+        (output / f"{name}.bin").write_bytes(payload)
         spans.append((name, address, payload, fixups))
 
     for name, address, payload, fixups in data_spans():
@@ -5047,9 +5130,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("original", type=Path)
     parser.add_argument("nasm", type=Path)
+    parser.add_argument("--c-compiler", type=Path, default=DEFAULT_C_COMPILER)
+    parser.add_argument("--c-runner", type=Path, default=DEFAULT_C_RUNNER)
+    parser.add_argument("--dosbox", type=Path, default=DEFAULT_DOSBOX)
     args = parser.parse_args()
     image = Image(args.original.read_bytes())
-    print(json.dumps(verify(image, args.nasm, ROOT / "work/control"), indent=2))
+    print(json.dumps(verify(image, args.nasm, ROOT / "work/control",
+                            c_compiler=args.c_compiler, c_runner=args.c_runner,
+                            dosbox=args.dosbox), indent=2))
 
 
 if __name__ == "__main__":
