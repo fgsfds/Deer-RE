@@ -1,5 +1,6 @@
 """Build and verify standalone RDH code and control data spans."""
 import argparse
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -3819,6 +3820,10 @@ CODE = (
 C_SYMBOL_BINDINGS = {
     "code_64035": {"___psp": (3, 0xC8CC)},
     "code_616ad": {"code_6406b_": (1, 0x5406B)},
+    "code_735e0": {"___STACKLOW": (3, 0xC8D0)},
+}
+C_PADDING_SYMBOLS = {
+    "code_735e0": {"_code_735e0_padding": 1},
 }
 
 
@@ -5085,7 +5090,7 @@ def compile_c_spans(sources, compiler, runner, dosbox):
         payloads = {}
         for name, object_path, _ in rows:
             blob = object_path.read_bytes()
-            sections, _ = read_object(blob)
+            sections, publics = read_object(blob)
             code_sections = [(index, section) for index, section in enumerate(sections)
                              if section and section["cls"] == "CODE"]
             if len(code_sections) != 1:
@@ -5094,7 +5099,8 @@ def compile_c_spans(sources, compiler, runner, dosbox):
             fixups = read_fixups(blob)
             if any(fix.segment != segment for fix in fixups):
                 raise ValueError(f"Unexpected non-CODE relocation in {name}")
-            payloads[name] = (bytes(section["data"]), fixups, read_externals(blob))
+            payloads[name] = (bytes(section["data"]), fixups,
+                              read_externals(blob), sections, publics)
         return payloads
 
 
@@ -5145,8 +5151,41 @@ def link_c_span(name, address, payload, omf_fixups, externals, expected_fixups):
             if fixup != expected_fixups[site]
         }
         site = min(differing)
-        raise ValueError(f"C relocation set differs for {name} at {site:#x}")
+        raise ValueError(f"C relocation set differs for {name} at {site:#x}: "
+                         f"got {generated.get(site)}, expected {expected_fixups.get(site)}")
     return bytes(payload)
+
+
+def split_c_padding(name, code, omf_fixups, sections, publics):
+    """Move declared C padding constants to the end of their code span."""
+    padding = bytearray()
+    code = bytearray(code)
+    code_segment = next(index for index, section in enumerate(sections)
+                        if section and section["cls"] == "CODE")
+    for symbol, count in C_PADDING_SYMBOLS.get(name, {}).items():
+        locations = [(segment, offset) for segment, offset, public in publics
+                     if public == symbol]
+        if len(locations) != 1:
+            raise ValueError(f"Expected one C padding symbol {symbol} in {name}")
+        segment, offset = locations[0]
+        data = bytes(sections[segment]["data"])
+        value = data[offset:offset + count]
+        if len(value) != count:
+            raise ValueError(f"Truncated C padding symbol {symbol} in {name}")
+        if segment == code_segment:
+            if offset != 0 or len(code) != len(data):
+                raise ValueError(f"C padding symbol {symbol} is not a CODE prefix in {name}")
+            code = code[count:]
+            adjusted = []
+            for fix in omf_fixups:
+                if fix.offset < count:
+                    raise ValueError(f"C padding overlaps a relocation in {name}")
+                adjusted.append(replace(fix, offset=fix.offset - count))
+            omf_fixups = adjusted
+        elif sections[segment]["cls"] not in ("CONST", "DATA"):
+            raise ValueError(f"Unsupported C padding section for {symbol} in {name}")
+        padding.extend(value)
+    return bytes(code), omf_fixups, bytes(padding)
 
 
 def verify(image, nasm, output, generated_fixups=None, *, collect=None,
@@ -5162,15 +5201,18 @@ def verify(image, nasm, output, generated_fixups=None, *, collect=None,
         if source.exists():
             if assembly.exists():
                 raise ValueError(f"Ambiguous C and assembly sources for {name}")
-            code, omf_fixups, externals = c_payloads[name]
+            code, omf_fixups, externals, sections, publics = c_payloads[name]
+            code, omf_fixups, padding = split_c_padding(
+                name, code, omf_fixups, sections, publics)
             payload = link_c_span(name, address, code, omf_fixups, externals, fixups)
+            payload += padding
         else:
             path = output / f"{name}.bin"
             subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
                             str(assembly.resolve(strict=True)), "-o", str(path)], check=True)
             payload = path.read_bytes()
         if len(payload) != size:
-            raise ValueError(f"Unexpected size for {name}")
+            raise ValueError(f"Unexpected size for {name}: expected {size}, got {len(payload)}")
         (output / f"{name}.bin").write_bytes(payload)
         spans.append((name, address, payload, fixups))
 
