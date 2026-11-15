@@ -150,7 +150,7 @@ and relocation mismatch on any further retry.
   kept, so these are assembly-derived retry clues, not a diagnosis of that
   draft.
 
-## `get_inc_angle` retry — rejected, mismatch measured
+## `get_inc_angle` retry — resolved to C
 
 The 84-byte routine at `0x19ff0` corresponds semantically to
 `getincangle` in NBlood's `gamedef1.c`, but the first C draft declared a
@@ -158,20 +158,21 @@ The 84-byte routine at `0x19ff0` corresponds semantically to
 E1121 (invalid return register). The assembly returns the final 32-bit EAX
 value, so changing the C result type to `int` fixed that declaration error.
 
-Using the repository's exact Watcom command (`/4r /s /or /of+ /bt=dos`), a
-short-argument draft generated 83 bytes and first differed at
-offset `0x04`: it emitted `and ah,7` where the target saves ECX and copies
-EAX to EBX before masking BH. Removing ECX from the pragma's clobber list
-made Watcom save ECX, but yielded 85 bytes and still used AH rather than the
-target's EBX/BH sequence. Changing both parameters to `int` generated 80
-bytes; its first mismatch moved to offset `0x04`, where it emitted an
-immediate mask (`and eax,0x7ff`) instead of the target's `push ecx`. The
-inputs are custom register arguments (EAX and EDX), and the target deliberately
-keeps the first value in EBX while masking only BH. Clue for a retry: control
-the register allocation or use a small, documented code patch; changing C
-types alone does not reproduce the target's register choices. No fixups were
-expected for this span. All unaccepted C source and metadata changes were
-removed; the assembly remains in the build.
+Using the repository's exact Watcom command (`/4r /s /or /of+ /bt=dos`),
+short-argument drafts first emitted `and ah,7` where the target copies EAX to
+EBX and masks BH. Changing both parameters to `int` emitted an immediate
+mask (`and eax,0x7ff`) instead of the target's saved-register setup. These
+trials show that the custom EAX/EDX arguments and narrow masks drive register
+selection; changing C types alone does not reproduce the target's choices.
+
+The accepted C implementation uses short arguments, an `int` return in EAX,
+and ten documented codegen patches. The patches restore the target's EBX/BH
+register path, comparison encodings, branch displacement, and final
+arithmetic sequence. Watcom's unpatched function was 85 bytes, while the
+patched code plus its one-byte NOP is exactly 84 bytes. The span has no
+fixups. `verify_control.py` now verifies the C span at `0x19ff0`, and the
+following assembly starts at `0x1a044`. See `src/get_inc_angle.c` and
+`tools/verify_control.py`.
 
 ## `do_move_things` upstream transplant — rejected before code generation
 

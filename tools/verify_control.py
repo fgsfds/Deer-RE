@@ -844,7 +844,8 @@ CODE = (
         (0x19f6b, 3, 0x14a0), (0x19f7a, 3, 0x16f0), (0x19f97, 3, 0x14a0),
         (0x19fa6, 3, 0x1728), (0x19fc3, 3, 0x14a0), (0x19fd2, 3, 0x1758),
     )}),
-    ("script_lexer", 0x19FF0, 2764, {site: (7, 16 if target > 0xFFFF else 0, obj, target)
+    ("get_inc_angle", 0x19FF0, 84, {}),
+    ("script_lexer", 0x1A044, 2680, {site: (7, 16 if target > 0xFFFF else 0, obj, target)
                                     for site, obj, target in (
         (0x1a04f, 3, 0xc3358), (0x1a059, 3, 0xc3358), (0x1a086, 3, 0x9150),
         (0x1a0d7, 3, 0x191368), (0x1a139, 3, 0x20438), (0x1a194, 3, 0x191374),
@@ -4134,6 +4135,7 @@ C_SYMBOL_BINDINGS = {
     },
 }
 C_PADDING_SYMBOLS = {
+    "get_inc_angle": {"_get_inc_angle_padding": 1},
     "store_slot": {"_store_slot_tail": 1},
     "analog_lookup": {"_analog_lookup_padding": 2},
     "action_name": {"_action_name_tail": 3},
@@ -4145,6 +4147,7 @@ C_PADDING_SYMBOLS = {
     "audio_init_flags": {"_audio_init_flags_tail": 2},
 }
 C_COMPILE_OPTIONS = {
+    "get_inc_angle": ("/of+",),
     "code_88da6": ("/of+",),
     "code_75f93": ("/of+",),
     "code_5d849": ("/of+",),
@@ -4179,6 +4182,19 @@ C_COMPILE_OPTIONS = {
     "code_5e9ab": ("/of+", "/os"),
 }
 C_CODE_PATCHES = {
+    "get_inc_angle": (
+        (bytes.fromhex("80e407"), bytes.fromhex("89c380e707")),
+        (bytes.fromhex("0fbfd8"), bytes.fromhex("0fbfc3")),
+        (bytes.fromhex("29cb"), bytes.fromhex("29c8")),
+        (bytes.fromhex("85db"), bytes.fromhex("85c0")),
+        (bytes.fromhex("7d02"), bytes.fromhex("7902")),
+        (bytes.fromhex("f7db"), bytes.fromhex("f7d8")),
+        (bytes.fromhex("81fb00040000"), bytes.fromhex("3d00040000")),
+        (bytes.fromhex("7c25"), bytes.fromhex("7c26")),
+        (bytes.fromhex("663d00047e0681e80008000081ea0008000081e800080000"),
+         bytes.fromhex("6681fb00047e0681eb0008000081ea0008000081eb00080000")),
+        (bytes.fromhex("0fbfda9829c389d8"), bytes.fromhex("29da89d0")),
+    ),
     "code_5d849": (
         (bytes.fromhex("7410"), bytes.fromhex("7418")),
         (bytes.fromhex("7507"), bytes.fromhex("0f94c00fb6c085c07407")),
