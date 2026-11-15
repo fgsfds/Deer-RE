@@ -9,9 +9,9 @@ import subprocess
 import tempfile
 
 from link_enginera import verify_span
-from omf_fixups import read_fixups
+from omf_fixups import read_externals, read_fixups
 from omf_sections import read_object
-from rdh import Image, ROOT
+from rdh import Image, OBJECTS, ROOT
 
 INPUTS = ROOT / "tools/inputs"
 DEFAULT_C_COMPILER = INPUTS / "watcom/binw/wcc386.exe"
@@ -3814,6 +3814,12 @@ CODE = (
     ("code_8c189", 0x8C189, 6, {}),
 )
 
+# Watcom OMF external names mapped to the original LE object address.  The
+# linker still checks every relocation site against the per-span fixup table.
+C_SYMBOL_BINDINGS = {
+    "code_64035": {"___psp": (3, 0xC8CC)},
+}
+
 
 def action_data():
     strings = bytearray()
@@ -5078,15 +5084,68 @@ def compile_c_spans(sources, compiler, runner, dosbox):
         payloads = {}
         for name, object_path, _ in rows:
             blob = object_path.read_bytes()
-            if read_fixups(blob):
-                raise ValueError(f"Unexpected relocation in standalone C module {name}")
             sections, _ = read_object(blob)
-            code = [bytes(section["data"]) for section in sections
-                    if section and section["cls"] == "CODE"]
-            if len(code) != 1:
+            code_sections = [(index, section) for index, section in enumerate(sections)
+                             if section and section["cls"] == "CODE"]
+            if len(code_sections) != 1:
                 raise ValueError(f"Expected one CODE section in {name}")
-            payloads[name] = code[0]
+            segment, section = code_sections[0]
+            fixups = read_fixups(blob)
+            if any(fix.segment != segment for fix in fixups):
+                raise ValueError(f"Unexpected non-CODE relocation in {name}")
+            payloads[name] = (bytes(section["data"]), fixups, read_externals(blob))
         return payloads
+
+
+def link_c_span(name, address, payload, omf_fixups, externals, expected_fixups):
+    """Resolve Watcom relocations using explicit symbol bindings and LE fixups."""
+    bindings = C_SYMBOL_BINDINGS.get(name, {})
+    source_object = next((number for number, obj in enumerate(OBJECTS, 1)
+                          if obj.base <= address < obj.base + obj.size), None)
+    if source_object is None:
+        raise ValueError(f"C span {name} is outside the original LE objects")
+    generated = {}
+    payload = bytearray(payload)
+    for fix in omf_fixups:
+        if fix.location != 9 or fix.width != 4:
+            raise ValueError(f"Unsupported C relocation in {name} at {fix.offset:#x}")
+        addend = struct.unpack_from("<i", payload, fix.offset)[0] + fix.displacement
+        if fix.target[0] == 2:
+            index = fix.target[1]
+            if index >= len(externals) or externals[index] not in bindings:
+                symbol = externals[index] if index < len(externals) else index
+                raise ValueError(f"Unbound C external {symbol} in {name}")
+            target_object, target_offset = bindings[externals[index]]
+        elif fix.target[0] == 0:
+            target_object = source_object
+            target_offset = addend
+        else:
+            raise ValueError(f"Unsupported C relocation target in {name}")
+
+        target_offset += addend
+        site = address + fix.offset
+        relative = fix.relative
+        if relative and target_object == source_object:
+            target_address = OBJECTS[target_object - 1].base + target_offset
+            value = target_address - (site + 4)
+        elif relative:
+            value = 0
+            generated[site] = (8, 16 if target_offset > 0xFFFF else 0,
+                               target_object, target_offset)
+        else:
+            value = target_offset
+            generated[site] = (7, 16 if target_offset > 0xFFFF else 0,
+                               target_object, target_offset)
+        struct.pack_into("<I", payload, fix.offset, value & 0xFFFFFFFF)
+
+    if generated != expected_fixups:
+        differing = generated.keys() ^ expected_fixups.keys() or {
+            site for site, fixup in generated.items()
+            if fixup != expected_fixups[site]
+        }
+        site = min(differing)
+        raise ValueError(f"C relocation set differs for {name} at {site:#x}")
+    return bytes(payload)
 
 
 def verify(image, nasm, output, generated_fixups=None, *, collect=None,
@@ -5102,7 +5161,8 @@ def verify(image, nasm, output, generated_fixups=None, *, collect=None,
         if source.exists():
             if assembly.exists():
                 raise ValueError(f"Ambiguous C and assembly sources for {name}")
-            payload = c_payloads[name]
+            code, omf_fixups, externals = c_payloads[name]
+            payload = link_c_span(name, address, code, omf_fixups, externals, fixups)
         else:
             path = output / f"{name}.bin"
             subprocess.run([str(nasm.resolve(strict=True)), "-f", "bin", "-I", str(ROOT / "src") + "/",
