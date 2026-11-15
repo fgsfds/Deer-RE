@@ -3818,6 +3818,7 @@ CODE = (
 # linker still checks every relocation site against the per-span fixup table.
 C_SYMBOL_BINDINGS = {
     "code_64035": {"___psp": (3, 0xC8CC)},
+    "code_616ad": {"code_6406b_": (1, 0x5406B)},
 }
 
 
