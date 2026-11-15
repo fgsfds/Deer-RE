@@ -3831,6 +3831,7 @@ C_SYMBOL_BINDINGS = {
         "_data_22efc0": (3, 0x22EFC0),
         "_data_22efc4": (3, 0x22EFC4),
     },
+    "code_88852": {"_game_state_14cdc": (3, 0x14CDC)},
 }
 C_PADDING_SYMBOLS = {
     "code_735e0": {"_code_735e0_padding": 1},
