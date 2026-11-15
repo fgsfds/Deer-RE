@@ -189,6 +189,26 @@ resolve the `0x2a0f0` call and the periodic helper equivalences first, then
 port Deer control flow and absolute state accesses rather than copying the
 upstream body. No candidate C was added.
 
+## `get_global_z` C translation — rejected, byte comparison measured
+
+The 648-byte routine at `0x1a0b8` matches upstream `getglobalz(short i)`
+semantically, including its branch order and the `getzrange`, `badguy`, and
+`ssp` register conventions. A standalone C draft used explicit Deer table
+layouts and those helper pragmas. With `/4r /s /or /of+ /bt=dos`, Watcom
+generated 484 bytes. The first byte mismatch was at span offset `0x0b`: the
+target starts `89 c7 0f bf d8` (copy EAX to EDI, then sign-extend AX to EBX),
+while the draft starts `50 6b c0 2c` (push EAX, then multiply the index by
+44). Its 15 resolved absolute data fixups also fall at different sites from
+the target's 17. The prologue and 16-byte local frame did match after `/of+`.
+
+Retry clues: the target keeps the short input index in EDI and uses EBX to
+form the 44-byte sprite stride; the draft spills the argument and uses an
+immediate multiply. Declaring the input as either `short` or `int`, marking
+it `register`, and changing `parm [eax]` to `parm nomemory [eax]` did not
+change that allocation. The source's explicit table-field aliases also did
+not reproduce all target relocation sites. The candidate C, table split, and
+metadata edits were removed, so the original assembly remains authoritative.
+
 ## Recording the next failed attempt
 
 Before discarding a candidate, record the function and source revision, exact
