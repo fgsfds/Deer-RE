@@ -150,6 +150,45 @@ and relocation mismatch on any further retry.
   kept, so these are assembly-derived retry clues, not a diagnosis of that
   draft.
 
+## `get_inc_angle` retry — rejected, mismatch measured
+
+The 84-byte routine at `0x19ff0` corresponds semantically to
+`getincangle` in NBlood's `gamedef1.c`, but the first C draft declared a
+16-bit return while requesting `value [eax]`. Watcom 10.5 rejected it with
+E1121 (invalid return register). The assembly returns the final 32-bit EAX
+value, so changing the C result type to `int` fixed that declaration error.
+
+Using the repository's exact Watcom command (`/4r /s /or /of+ /bt=dos`), a
+short-argument draft generated 83 bytes and first differed at
+offset `0x04`: it emitted `and ah,7` where the target saves ECX and copies
+EAX to EBX before masking BH. Removing ECX from the pragma's clobber list
+made Watcom save ECX, but yielded 85 bytes and still used AH rather than the
+target's EBX/BH sequence. Changing both parameters to `int` generated 80
+bytes; its first mismatch moved to offset `0x04`, where it emitted an
+immediate mask (`and eax,0x7ff`) instead of the target's `push ecx`. The
+inputs are custom register arguments (EAX and EDX), and the target deliberately
+keeps the first value in EBX while masking only BH. Clue for a retry: control
+the register allocation or use a small, documented code patch; changing C
+types alone does not reproduce the target's register choices. No fixups were
+expected for this span. All unaccepted C source and metadata changes were
+removed; the assembly remains in the build.
+
+## `do_move_things` upstream transplant — rejected before code generation
+
+The 1,412-byte Deer routine at `0x19650` resembles `domovethings` in
+NBlood's `game9.c`, but a direct upstream-body transplant would not preserve
+Deer's behavior. Deer calls `update_target_clock` before the body, toggles a
+byte at `0x972e` instead of incrementing upstream's `everyothertime`, and
+uses a single conditional call at `0x2a0f0` in the per-player loop where
+upstream separates `cheatkeys`, `processinput`, and `checksectors`. Deer also
+uses `CORRECT_PREDICTED_MOVEMENT`; upstream calls
+`fakedomovethingscorrect`. The periodic update calls likewise do not line up
+one-for-one. These observations come from comparing Deer assembly with the
+upstream C source, not from a failed compiler run. Clue for a later attempt:
+resolve the `0x2a0f0` call and the periodic helper equivalences first, then
+port Deer control flow and absolute state accesses rather than copying the
+upstream body. No candidate C was added.
+
 ## Recording the next failed attempt
 
 Before discarding a candidate, record the function and source revision, exact
