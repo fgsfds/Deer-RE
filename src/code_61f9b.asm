@@ -1,0 +1,4 @@
+bits 32
+org 0x61f9b
+
+    db 0x00
